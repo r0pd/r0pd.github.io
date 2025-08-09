@@ -6,7 +6,7 @@ const code = window.location.pathname.substring(1);
 async function findAndRedirect() {
   for (let i = 1; i <= MAX_PARTS; i++) {
     try {
-      const resp = await fetch(`/data/part${i}.json`);
+      const resp = await fetch(`/data/data_part${i}.json`);
       if (!resp.ok) continue;
 
       const links = await resp.json();
