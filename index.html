@@ -82,7 +82,18 @@ h1{font-size:22px;margin:0}
     transform: rotate(90deg);
 }
 
-.search-wrap{display:flex;justify-content:flex-end;flex:0 0 260px; margin-top: 24px;}
+/* MODIFIED: Container for Info and Search */
+.info-search-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap; /* Allows items to wrap on smaller screens */
+    gap: 12px; /* Adds space between items when they wrap */
+    margin-top: 24px;
+}
+
+/* MODIFIED: Search-wrap no longer needs top margin */
+.search-wrap{display:flex;justify-content:flex-end;flex:0 0 260px;}
 .search-input{width:100%;font-size: 16px;padding:8px;border-radius:8px;background:var(--panel);border:1px solid rgba(255,255,255,0.03);color:#eaf2ff;box-sizing:border-box}
 
 table{width:100%;border-collapse:collapse;margin-top:14px;border-radius:8px;overflow:hidden;background:transparent; table-layout: fixed;}
@@ -179,14 +190,17 @@ tbody tr:hover{background:rgba(255,255,255,0.01)}
         </div>
       </div>
 
-      <div id="infoLine" style="margin-top:10px;color:var(--muted);font-size:15px"></div>
+      <div class="info-search-bar">
+        <div id="infoLine" style="color:var(--muted);font-size:15px"></div>
         <div class="search-wrap">
           <input id="searchInput" class="search-input" placeholder="Tìm kiếm mã hoặc link..." />
         </div>
+      </div>
+
       <table>
         <thead>
           <tr>
-            <th style="width:230px">Rút gọn</th>
+            <th style="width:150px">Rút gọn</th>
             <th>Link gốc</th>
             <th style="width:140px; text-align:right;">Hành động</th>
           </tr>
@@ -320,7 +334,7 @@ function render(){
     origLink.target = 'blank';
     origLink.className = 'link-text';
     origLink.textContent = item.original;
-    origLink.title = item.original; // Show full link on hover
+    origLink.title = item.original;
 
     origWrapper.appendChild(copyBtnOrig);
     origWrapper.appendChild(origLink);
