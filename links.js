@@ -1,0 +1,10 @@
+var links = [
+  {
+    "short": "2025dBf2",
+    "original": "https://github.com/r0pd/r0pd.github.io"
+  },
+  {
+    "short": "2025pCn6",
+    "original": "https://github.com/r0pd/r0pd.github.io"
+  }
+];

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Redirect...</title>
+<link rel="icon" type="image/png" href="./img/logo.png" />
+</head>
+<body style="background:black;color:white;margin:0;">
+<script>
+(function(){
+  function show(msg){
+    document.body.innerHTML = "<h1 style='color:white;background:black;text-align:center;padding:20px;margin:0'>"+msg+"</h1>";
+  }
+
+  // Lấy đoạn cuối của path (ví dụ: /repo/abcd -> 'abcd'; /abcd -> 'abcd')
+  const rawPath = decodeURIComponent(location.pathname || '');
+  const parts = rawPath.split('/').filter(Boolean);
+  const code = parts.length ? parts[parts.length - 1] : '';
+
+  if(!code || code === '404.html' || code === 'index.html'){
+    show('Không có mã rút gọn!');
+    return;
+  }
+
+  // Tạo danh sách URL khả dĩ cho links.js (thích ứng với user-page và project-page)
+  const basePath = rawPath.replace(/\/[^\/]*$/, '') || '';
+  const candidates = [
+    location.origin + basePath + '/links.js', // ví dụ: https://user.github.io/repo/links.js
+    location.origin + '/links.js',            // fallback: root
+    'links.js'                                // relative fallback
+  ];
+
+  function tryEvalAndRedirect(txt){
+    try {
+      // Trả về mảng links hoặc shortLinks nếu có
+      const fn = new Function(txt + '; return (typeof links !== "undefined") ? links : (typeof shortLinks !== "undefined" ? shortLinks : null);');
+      const arr = fn();
+      if(!Array.isArray(arr)) throw new Error('Không tìm thấy mảng links/shortLinks');
+
+      // Hỗ trợ object có { short, original } hoặc { code, url }
+      const found = arr.find(l => String(l.short || l.code || '').trim() === code);
+      if(found){
+        const dest = found.original || found.url || found.link;
+        if(dest){
+          location.replace(dest);
+          return true;
+        }
+      }
+      return false;
+    } catch(e){
+      console.error('tryEvalAndRedirect error:', e);
+      return false;
+    }
+  }
+
+  (async function loadAndRun(){
+    for(const url of candidates){
+      try {
+        const resp = await fetch(url, {cache:'no-cache'});
+        if(!resp.ok) continue;
+        const txt = await resp.text();
+        if(tryEvalAndRedirect(txt)) return;
+      } catch(e){
+        // console.warn('fetch fail for', url, e);
+      }
+    }
+    show('Link không tồn tại hoặc không thể tải dữ liệu links.js');
+  })();
+
+})();
+</script>
+</body>
+</html>

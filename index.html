@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Quản Lý Link Rút Gọn</title>
+<link rel="icon" type="image/png" href="./img/logo.png" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  :root{
+    --bg:#0f1720;
+    --card:#111318;
+    --panel:#16181b;
+    --accent:#1976d2;
+    --accent-2:#66b3ff;
+    --muted:#9aa6bf;
+    --input-bg:#2b2b2b;
+  }
+  html,body{height:100%;margin:0;background:var(--bg);color:#e6eef8;font-family:Inter,Arial,Helvetica,sans-serif}
+  .wrap{max-width:1100px;margin:28px auto;padding:18px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);box-shadow:0 6px 18px rgba(2,6,23,0.6)}
+  header{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+  .logo{width:42px;height:42px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-weight:700}
+  h1{font-size:18px;margin:0}
+  .top-row{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .file-label{background:var(--accent);color:#fff;padding:8px 12px;border-radius:8px;cursor:pointer;border:1px solid rgba(255,255,255,0.04)}
+  .file-label:hover{background:var(--accent-2)}
+  #fileName{color:var(--muted);font-size:13px}
+  .btn{background:var(--accent);color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
+  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04)}
+  .btn.warn{background:#f0b429;color:#111}
+  .btn.danger{background:#d9534f}
+  .input, input[type="text"], textarea{background:var(--panel);border:1px solid rgba(255,255,255,0.03);padding:10px;border-radius:8px;color:#eaf2ff;font-family:inherit}
+
+  /* ---------- NEW: create-row (create area left, search right on same row) ---------- */
+  .create-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+    flex-wrap: nowrap;
+  }
+  .create-area {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex: 1; /* allow to grow */
+    min-width: 0; /* important so flex child can shrink */
+  }
+  .create-area .input {
+    flex: 1;
+    min-width: 0; /* allow shrinking on small screens */
+    max-width: 350px;
+  }
+  .search-wrap {
+    display: flex;
+    justify-content: flex-end;
+    flex: 0 0 260px; /* fixed-ish area on right */
+  }
+  .search-input {
+    width: 100%;
+    padding: 8px;
+    border-radius: 8px;
+    background: var(--panel);
+    border: 1px solid rgba(255,255,255,0.03);
+    color: #eaf2ff;
+    box-sizing: border-box;
+  }
+  /* ------------------------------------------------------------------------------- */
+
+  table{width:100%;border-collapse:collapse;margin-top:14px;border-radius:8px;overflow:hidden;background:transparent}
+  thead th{background:rgba(20,28,40,0.6);text-align:left;padding:12px;font-weight:600;color:var(--accent-2);font-size:13px}
+  tbody tr{border-bottom:1px solid rgba(255,255,255,0.03)}
+  td{padding:10px;vertical-align:middle;font-size:14px}
+  tbody tr:hover{background:rgba(255,255,255,0.01)}
+  .copy-btn{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:10px;border-radius:8px;cursor:pointer;margin-right:8px;color:var(--muted)}
+  .action-btn{width:36px;height:36px;border-radius:8px;border:none;cursor:pointer;color:#0a0a0a}
+  .action-edit{background:#f7b955}
+  .action-save{background:var(--accent-2);color:#0a0a0a}
+  .action-del{background:#e05b5b}
+  .table-edit-input{background:var(--input-bg);color:#fff;border:1px solid #4da3ff;border-radius:6px;padding:6px 10px;width:70%;box-sizing:border-box}
+  .pagination{display:flex;gap:6px;justify-content:center;margin-top:12px}
+  .pg-btn{background:rgba(255,255,255,0.03);border:none;color:var(--muted);padding:6px 10px;border-radius:8px;cursor:pointer}
+  .pg-btn.active{background:var(--accent);color:#fff}
+  @media (max-width:820px){
+    /* On smaller screens: stack vertically (keeps usability) */
+    .create-row { flex-direction: column; align-items: stretch; gap: 8px; }
+    .create-area { flex-direction: column; align-items: stretch; }
+    .create-area .input { width: 100%; }
+    .create-area .btn { width: 100%; }
+    .search-wrap { justify-content: flex-start; flex-basis: 100%; }
+    .search-input { width: 100%; }
+  }
+  @media (max-width:520px){
+    td{font-size:13px;padding:8px}
+    .logo{width:36px;height:36px}
+  }
+  /* Popup xác nhận */
+  .popup-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+  .popup-overlay.show { display: flex; opacity: 1; }
+  .popup-box {
+    background: var(--panel);
+    padding: 20px;
+    border-radius: 12px;
+    max-width: 90%;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+    animation: popupFade 0.25s ease forwards;
+  }
+  @keyframes popupFade {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  /* Popup dữ liệu */
+  .data-popup { width: 600px; max-width: 95%; }
+  .data-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .data-textarea {width: 96%; height: 300px; margin: 10px 0px; resize: vertical; }
+  .close-btn { background:transparent; border:none; color:#ccc; font-size:18px; cursor:pointer; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo"><i class="fa fa-link" style="color:#fff"></i></div>
+      <div>
+        <h1>Link Rút Gọn</h1>
+      </div>
+    </header>
+    <span id="fileName">Chưa có tệp</span>
+    <div class="top-row">
+      <div class="controls">
+        <label class="file-label" for="importFile"><i class="fa fa-file-import"></i>&nbsp; Chọn tệp</label>
+        
+        <input type="file" id="importFile" accept=".js" style="display:none">
+        <button class="btn" id="exportBtn"><i class="fa fa-file-export"></i>&nbsp; Xuất file</button>
+        <button class="btn warn" id="showDataBtn"><i class="fa fa-database"></i>&nbsp; Dữ liệu (links.js)</button>
+      </div>
+      <!-- right side of top-row left empty so controls stay left -->
+    </div>
+
+    <!-- NEW: create-row contains create-area (left) and search-wrap (right) on one row -->
+    <div class="create-row">
+      <div class="create-area">
+        <input id="originalInput" class="input" placeholder="Nhập link gốc (vd: https://example.com)" />
+        <button id="createBtn" class="btn"><i class="fa fa-plus"></i>&nbsp; Tạo</button>
+      </div>
+      <div class="search-wrap">
+        <input id="searchInput" class="search-input" placeholder="Tìm kiếm mã hoặc link..." />
+      </div>
+    </div>
+    
+    <table>
+      <thead>
+        <tr>
+          <th style="width:160px">Rút gọn</th>
+          <th>Link gốc</th>
+          <th style="width:140px">Hành động</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+
+    <div class="pagination" id="pagination"></div>
+  </div>
+
+  <!-- Popup dữ liệu -->
+  <div id="dataPopup" class="popup-overlay">
+    <div class="popup-box data-popup">
+      <div class="data-header">
+        <strong>Dữ liệu (links.js)</strong>
+        <div>
+          <button id="copyDataBtn" class="copy-btn" title="Copy toàn bộ dữ liệu"><i class="fa fa-copy"></i></button>
+          <button class="close-btn" id="closeDataPopup">&times;</button>
+        </div>
+      </div>
+      <textarea id="dataTextarea" class="data-textarea"></textarea>
+      <div style="margin-top:6px; text-align:right;">
+        <button id="saveDataBtn" class="btn warn"><i class="fa fa-save"></i> Lưu thay đổi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Popup xác nhận xóa -->
+  <div id="confirmPopup" class="popup-overlay">
+    <div class="popup-box" style="max-width:320px;">
+      <div style="margin-bottom:14px;font-size:15px;">Bạn có chắc muốn xóa mục này?</div>
+      <div style="display:flex;gap:10px;justify-content:center;">
+        <button id="confirmYes" class="btn danger">Xóa</button>
+        <button id="confirmNo" class="btn ghost">Hủy</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+let data = [];
+const PER_PAGE = 10;
+let page = 1;
+
+/* Copy với icon đổi */
+function copyWithIcon(text, btnEl) {
+  navigator.clipboard.writeText(text).then(()=>{
+    const icon = btnEl.querySelector('i');
+    const oldClass = icon.className;
+    icon.className = 'fa fa-check';
+    setTimeout(()=>{ icon.className = oldClass; }, 1200);
+  }).catch(()=>{});
+}
+
+function render(){
+  const q = (document.getElementById('searchInput').value||"").toLowerCase();
+  const filtered = data.filter(d => d.short.toLowerCase().includes(q) || d.original.toLowerCase().includes(q));
+  const totalPg = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+  if(page>totalPg) page = totalPg;
+  const start = (page-1)*PER_PAGE;
+  const pageItems = filtered.slice(start, start+PER_PAGE);
+
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = "";
+  pageItems.forEach((item, idx)=>{
+    const realIndex = start + idx;
+    const tr = document.createElement('tr');
+
+    const tdShort = document.createElement('td');
+    const copyBtnShort = document.createElement('button');
+    copyBtnShort.className = 'copy-btn';
+    copyBtnShort.title = 'Copy full short URL';
+    copyBtnShort.innerHTML = '<i class="fa fa-copy"></i>';
+    copyBtnShort.onclick = ()=> copyWithIcon(location.origin + '/' + item.short, copyBtnShort);
+    tdShort.appendChild(copyBtnShort);
+    const shortText = document.createElement('span');
+    shortText.textContent = " " + item.short;
+    tdShort.appendChild(shortText);
+
+    const tdOrig = document.createElement('td');
+    const copyBtnOrig = document.createElement('button');
+    copyBtnOrig.className = 'copy-btn';
+    copyBtnOrig.title = 'Copy original URL';
+    copyBtnOrig.innerHTML = '<i class="fa fa-copy"></i>';
+    copyBtnOrig.onclick = ()=> copyWithIcon(item.original, copyBtnOrig);
+    tdOrig.appendChild(copyBtnOrig);
+    const origLink = document.createElement('a');
+    origLink.href = item.original;
+    origLink.target = '_blank';
+    origLink.style.color = '#dfefff';
+    origLink.style.textDecoration = 'none';
+    origLink.textContent = item.original;
+    tdOrig.appendChild(origLink);
+
+    const tdAct = document.createElement('td');
+    tdAct.style.display = 'flex';
+    tdAct.style.justifyContent = 'flex-end';
+    tdAct.style.gap = '8px';
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'action-btn action-edit';
+    editBtn.title = 'Sửa';
+    editBtn.innerHTML = '<i class="fa fa-edit"></i>';
+    editBtn.onclick = ()=> startEdit(realIndex, tr);
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'action-btn action-del';
+    delBtn.title = 'Xóa';
+    delBtn.innerHTML = '<i class="fa fa-trash"></i>';
+    delBtn.onclick = ()=> showConfirm(realIndex);
+
+    tdAct.appendChild(editBtn);
+    tdAct.appendChild(delBtn);
+
+    tr.appendChild(tdShort);
+    tr.appendChild(tdOrig);
+    tr.appendChild(tdAct);
+    tbody.appendChild(tr);
+  });
+
+  const pgWrap = document.getElementById('pagination');
+  pgWrap.innerHTML = "";
+  for(let p=1;p<=totalPg;p++){
+    const b = document.createElement('button');
+    b.className = 'pg-btn' + (p===page? ' active' : '');
+    b.textContent = p;
+    b.onclick = ()=> { page = p; render(); };
+    pgWrap.appendChild(b);
+  }
+
+  // Cập nhật popup dữ liệu
+  document.getElementById('dataTextarea').value = JSON.stringify(data, null, 2);
+}
+
+function startEdit(i, rowEl){
+  const item = data[i];
+  const tdShort = document.createElement('td');
+  const shortInput = document.createElement('input');
+  shortInput.className = 'table-edit-input';
+  shortInput.value = item.short;
+  tdShort.appendChild(shortInput);
+
+  const tdOrig = document.createElement('td');
+  const origInput = document.createElement('input');
+  origInput.className = 'table-edit-input';
+  origInput.value = item.original;
+  tdOrig.appendChild(origInput);
+
+  const tdAct = document.createElement('td');
+  tdAct.style.display = 'flex';
+  tdAct.style.justifyContent = 'flex-end';
+  tdAct.style.gap = '8px';
+
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'action-btn action-save';
+  saveBtn.title = 'Lưu';
+  saveBtn.innerHTML = '<i class="fa fa-check"></i>';
+  saveBtn.onclick = ()=>{
+    const ns = shortInput.value.trim();
+    const no = origInput.value.trim();
+    if(!ns || !no) return;
+    data[i].short = ns;
+    data[i].original = no;
+    saveState();
+    render();
+  };
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'action-btn action-del';
+  cancelBtn.title = 'Hủy';
+  cancelBtn.innerHTML = '<i class="fa fa-times"></i>';
+  cancelBtn.onclick = ()=> render();
+
+  tdAct.appendChild(saveBtn);
+  tdAct.appendChild(cancelBtn);
+
+  rowEl.innerHTML = '';
+  rowEl.appendChild(tdShort);
+  rowEl.appendChild(tdOrig);
+  rowEl.appendChild(tdAct);
+}
+
+function createNew(){
+  const orig = document.getElementById('originalInput').value.trim();
+  if(!orig) return;
+  let code = genCode();
+  while(data.some(x=>x.short===code)) code = genCode();
+  data.push({ short: code, original: orig });
+  saveState();
+  document.getElementById('originalInput').value = '';
+  page = Math.ceil(data.length / PER_PAGE);
+  render();
+}
+
+function genCode(){
+  const chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  let out = new Date().getFullYear().toString();
+  for(let i=0;i<4;i++) out += chars.charAt(Math.floor(Math.random()*chars.length));
+  return out;
+}
+
+function saveState(){ window._links_working = data; }
+
+function exportFile(){
+  const out = 'var links = ' + JSON.stringify(data, null, 2) + ';';
+  const blob = new Blob([out], { type: 'application/javascript' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'links.js';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importFile(file){
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev)=>{
+    const txt = ev.target.result;
+    try {
+      const fn = new Function(txt + '; return links;');
+      const imported = fn();
+      if(Array.isArray(imported)){
+        data = imported.map(it=>({ short: String(it.short), original: String(it.original) }));
+        saveState();
+        page = 1;
+        render();
+        document.getElementById('fileName').textContent = file.name;
+      } else alert('Không tìm thấy mảng `links` trong file.');
+    } catch (err){
+      alert('Lỗi khi đọc file: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function tryLoadRemote(){
+  fetch('links.js', {cache:'no-cache'}).then(r=>{
+    if(!r.ok) throw new Error();
+    return r.text();
+  }).then(txt=>{
+    try {
+      const fn = new Function(txt + '; return links;');
+      const imported = fn();
+      if(Array.isArray(imported)){
+        data = imported.map(it=>({ short: String(it.short), original: String(it.original) }));
+        saveState();
+        render();
+      }
+    } catch(e){}
+  }).catch(()=>{});
+}
+
+/* Popup xác nhận xóa */
+let pendingDeleteIndex = null;
+function showConfirm(index) {
+  pendingDeleteIndex = index;
+  const popup = document.getElementById('confirmPopup');
+  popup.style.display = 'flex';
+  requestAnimationFrame(()=> popup.classList.add('show'));
+}
+function hideConfirm() {
+  const popup = document.getElementById('confirmPopup');
+  popup.classList.remove('show');
+  setTimeout(()=>{ popup.style.display = 'none'; }, 250);
+  pendingDeleteIndex = null;
+}
+document.getElementById('confirmYes').onclick = () => {
+  if (pendingDeleteIndex !== null) {
+    data.splice(pendingDeleteIndex, 1);
+    saveState();
+    render();
+  }
+  hideConfirm();
+};
+document.getElementById('confirmNo').onclick = hideConfirm;
+
+/* Popup dữ liệu */
+function showDataPopup(){
+  const popup = document.getElementById('dataPopup');
+  popup.style.display = 'flex';
+  requestAnimationFrame(()=> popup.classList.add('show'));
+}
+function hideDataPopup(){
+  const popup = document.getElementById('dataPopup');
+  popup.classList.remove('show');
+  setTimeout(()=>{ popup.style.display = 'none'; }, 250);
+}
+
+document.getElementById('showDataBtn').onclick = showDataPopup;
+document.getElementById('closeDataPopup').onclick = hideDataPopup;
+document.getElementById('copyDataBtn').onclick = function(){
+  copyWithIcon(document.getElementById('dataTextarea').value, this);
+};
+document.getElementById('saveDataBtn').onclick = function(){
+  try {
+    const arr = JSON.parse(document.getElementById('dataTextarea').value);
+    if(Array.isArray(arr)){
+      data = arr.map(it=>({ short: String(it.short), original: String(it.original) }));
+      saveState();
+      render();
+      hideDataPopup();
+    } else alert('Dữ liệu không hợp lệ');
+  } catch(e){ alert('JSON không hợp lệ: ' + e.message); }
+};
+
+/* Đóng popup bằng Esc */
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    hideConfirm();
+    hideDataPopup();
+  }
+});
+
+document.getElementById('createBtn').onclick = createNew;
+document.getElementById('searchInput').oninput = ()=>{ page = 1; render(); };
+document.getElementById('exportBtn').onclick = exportFile;
+document.getElementById('importFile').onchange = e=>{
+  const f = e.target.files[0];
+  if(f) importFile(f);
+  document.getElementById('fileName').textContent = f ? f.name : 'Chưa có tệp';
+};
+
+tryLoadRemote();
+render();
+</script>
+</body>
+</html>
