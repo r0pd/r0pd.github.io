@@ -1,6 +1,6 @@
 /* Firebase + Firestore integration */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, writeBatch, query, orderBy, limit, startAfter, getCountFromServer, documentId, where } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 /* --------- CONFIG --------- */
@@ -19,12 +19,14 @@ const db = getFirestore(app);
 const auth = getAuth();
 
 /* ---------- App State ---------- */
-let data = [];
+let data = []; // Sẽ chỉ chứa dữ liệu của trang hiện tại
 const PER_PAGE = 10;
 let page = 1;
 let importedFileNames = [];
 let pendingDeleteIndex = null;
 let currentUser = null;
+let totalLinks = 0; // Biến mới để lưu tổng số link
+let pageCursors = { 1: null }; // Biến mới để lưu con trỏ cho mỗi trang
 
 /* ---------- DOM Elements ---------- */
 const loginContainer = document.getElementById('login-container');
@@ -37,25 +39,17 @@ function copyWithIcon(text, btnEl) {
   navigator.clipboard.writeText(text).then(()=>{ const icon = btnEl.querySelector('i'); const oldClass = icon.className; icon.className = 'fa fa-check'; setTimeout(()=>{ icon.className = oldClass; }, 1200); }).catch(()=>{});
 }
 
-function render(){
-  document.getElementById('infoLine').textContent = `Tổng link hiện có: ${data.length}`;
-  const q = (document.getElementById('searchInput').value||"").toLowerCase();
+function render() {
+  document.getElementById('infoLine').textContent = `Tổng link hiện có: ${totalLinks}`;
   
-  const filtered = data.filter(d => 
-      (d.short||'').toLowerCase().includes(q) || 
-      (d.original||'').toLowerCase().includes(q) ||
-      (d.title||'').toLowerCase().includes(q)
-  );
-
-  const totalPg = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
-  if(page>totalPg) page = totalPg;
-  const start = (page-1)*PER_PAGE;
-  const pageItems = filtered.slice(start, start+PER_PAGE);
+  const pageItems = data;
 
   const tbody = document.getElementById('tableBody');
   tbody.innerHTML = "";
-  pageItems.forEach((item, idx)=>{
-    const realIndex = start + idx;
+
+  // PHẦN BỊ THIẾU TRƯỚC ĐÂY GIỜ ĐÃ ĐƯỢC THÊM ĐẦY ĐỦ
+  pageItems.forEach((item, idx) => {
+    const realIndex = (page - 1) * PER_PAGE + idx;
     const tr = document.createElement('tr');
 
     // --- Ô rút gọn ---
@@ -115,14 +109,14 @@ function render(){
     editBtn.className = 'action-btn action-edit';
     editBtn.title = 'Sửa';
     editBtn.innerHTML = '<i class="fa fa-edit"></i>';
-    editBtn.onclick = ()=> startEdit(realIndex, tr);
+    editBtn.onclick = ()=> startEdit(idx, tr);
     editBtn.style.marginRight = '8px';
 
     const delBtn = document.createElement('button');
     delBtn.className = 'action-btn action-del';
     delBtn.title = 'Xóa';
     delBtn.innerHTML = '<i class="fa fa-trash"></i>';
-    delBtn.onclick = ()=> showConfirm(realIndex);
+    delBtn.onclick = ()=> showConfirm(idx);
 
     tdAct.appendChild(editBtn);
     tdAct.appendChild(delBtn);
@@ -134,17 +128,20 @@ function render(){
     tbody.appendChild(tr);
   });
 
+  // Phần tạo nút phân trang
   const pgWrap = document.getElementById('pagination');
   pgWrap.innerHTML = "";
-  for(let p=1;p<=totalPg;p++){
+  const totalPg = Math.max(1, Math.ceil(totalLinks / PER_PAGE));
+
+  for (let p = 1; p <= totalPg; p++) {
     const b = document.createElement('button');
-    b.className = 'pg-btn' + (p===page? ' active' : '');
+    b.className = 'pg-btn' + (p === page ? ' active' : '');
     b.textContent = p;
-    b.onclick = ()=> { page = p; render(); };
+    b.onclick = () => { loadLinks(p); };
     pgWrap.appendChild(b);
   }
 
-  document.getElementById('dataTextarea').value = JSON.stringify(data, null, 2);
+  document.getElementById('dataTextarea').value = "// Dữ liệu JSON toàn bộ không còn khả dụng ở chế độ xem này.";
 }
 
 function startEdit(i, rowEl){
@@ -484,7 +481,11 @@ document.getElementById('originalInput').addEventListener('keyup', (event) => {
         event.preventDefault();
     }
 });
-document.getElementById('searchInput').oninput = ()=>{ page=1; render(); };
+document.getElementById('searchInput').oninput = () => {
+  // Khi người dùng gõ tìm kiếm, luôn bắt đầu từ trang 1
+  // và gọi loadLinks với nội dung ô tìm kiếm
+  loadLinks(1, document.getElementById('searchInput').value);
+};
 document.getElementById('exportBtn').onclick = exportFile;
 document.getElementById('importFiles').onchange = e=>{ importSelectedFiles(e.target.files); };
 
@@ -498,27 +499,87 @@ document.getElementById('adminEmail').addEventListener('keyup', handleLoginOnEnt
 document.getElementById('adminPass').addEventListener('keyup', handleLoginOnEnter);
 
 
-async function loadLinks(){
+async function loadLinks(targetPage = 1, searchQuery = '') {
   try {
-    const snapshot = await getDocs(collection(db, "links"));
-    data = [];
-    snapshot.forEach(docSnap => {
+    searchQuery = searchQuery.trim();
+    const linksCollection = collection(db, "links");
+
+    // --- Cập nhật logic đếm tổng số ---
+    // Nếu có tìm kiếm, đếm các kết quả khớp. Nếu không, đếm tất cả.
+    let countQuery;
+    if (searchQuery) {
+      countQuery = query(
+        linksCollection,
+        orderBy(documentId()),
+        where(documentId(), '>=', searchQuery),
+        where(documentId(), '<=', searchQuery + '\uf8ff')
+      );
+    } else {
+      countQuery = query(linksCollection);
+    }
+    const countSnapshot = await getCountFromServer(countQuery);
+    totalLinks = countSnapshot.data().count;
+
+    // --- Cập nhật logic truy vấn dữ liệu ---
+    let linksQuery;
+    if (searchQuery) {
+      // Query khi có tìm kiếm
+      linksQuery = query(
+        linksCollection,
+        orderBy(documentId()),
+        where(documentId(), '>=', searchQuery),
+        where(documentId(), '<=', searchQuery + '\uf8ff'),
+        limit(PER_PAGE)
+      );
+    } else {
+      // Query khi không có tìm kiếm (phân trang bình thường)
+      linksQuery = query(
+        linksCollection,
+        orderBy(documentId()),
+        limit(PER_PAGE)
+      );
+    }
+
+    // Logic phân trang với startAfter giữ nguyên cho cả 2 trường hợp
+    if (targetPage > 1 && pageCursors[targetPage]) {
+      // Phải xây dựng lại query với startAfter
+      if (searchQuery) {
+          linksQuery = query(linksCollection, orderBy(documentId()), where(documentId(), '>=', searchQuery), where(documentId(), '<=', searchQuery + '\uf8ff'), startAfter(pageCursors[targetPage]), limit(PER_PAGE));
+      } else {
+          linksQuery = query(linksCollection, orderBy(documentId()), startAfter(pageCursors[targetPage]), limit(PER_PAGE));
+      }
+    }
+
+    const documentSnapshots = await getDocs(linksQuery);
+
+    data = []; 
+    documentSnapshots.forEach(docSnap => {
       const obj = docSnap.data();
-      data.push({ 
-        short: docSnap.id, 
-        original: obj.original||"",
-        title: obj.title||""
+      data.push({
+        short: docSnap.id,
+        original: obj.original || "",
+        title: obj.title || ""
       });
     });
-    data.sort((a,b)=>a.short.localeCompare(b.short));
-    page = 1;
+
+    if (documentSnapshots.docs.length > 0) {
+      const lastVisible = documentSnapshots.docs[documentSnapshots.docs.length - 1];
+      pageCursors[targetPage + 1] = lastVisible;
+    }
+
+    // Reset con trỏ và trang khi thực hiện một tìm kiếm mới
+    if(searchQuery && targetPage === 1){
+        pageCursors = { 1: null };
+    }
+
+    page = targetPage;
     render();
-  } catch(err){
+
+  } catch (err) {
     console.error(err);
-    alert("Lỗi khi load dữ liệu từ Firestore: " + err.message);
+    alert("Lỗi khi tải dữ liệu: " + err.message);
   }
 }
-
 
 /* ---------- AUTHENTICATION ---------- */
 document.getElementById('loginBtn').onclick = async () => {
@@ -556,7 +617,7 @@ document.getElementById('logoutBtn').onclick = async () => {
   await signOut(auth);
 };
 
-onAuthStateChanged(auth, user => {
+onAuthStateChanged(auth, async user => {
 
   if (loaderContainer) {
     loaderContainer.style.display = 'none';
@@ -569,11 +630,18 @@ onAuthStateChanged(auth, user => {
     document.getElementById('authStatus').textContent = `Đã đăng nhập: ${user.email}`;
     document.getElementById('domainPrefix').textContent = location.origin.replace(/https?:\/\//, '') + '/';
     loginErrorEl.textContent = '';
-    loadLinks();
+    // Lấy tổng số link một lần để tính toán phân trang
+    const countSnapshot = await getCountFromServer(collection(db, "links"));
+    totalLinks = countSnapshot.data().count;
+    // Tải trang đầu tiên
+    loadLinks(1);
+
   } else {
     loginContainer.style.display = 'flex';
     mainContainer.style.display = 'none';
     data = [];
+    totalLinks = 0;
+    pageCursors = { 1: null };
     render();
   }
 });
