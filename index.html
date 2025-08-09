@@ -414,12 +414,32 @@ document.getElementById('showDataBtn').onclick = showDataPopup;
 document.getElementById('closeDataPopup').onclick = hideDataPopup;
 
 let pendingDeleteIndex = null;
-function showConfirm(index) { pendingDeleteIndex = index; const popup = document.getElementById('confirmPopup'); popup.style.display='flex'; requestAnimationFrame(()=>popup.classList.add('show')); }
-function hideConfirm(){ const popup=document.getElementById('confirmPopup'); popup.classList.remove('show'); setTimeout(()=>popup.style.display='none',250); pendingDeleteIndex=null; }
+function showConfirm(index) { pendingDeleteIndex = index; const popup = document.getElementById('confirmPopup'); popup.style.display='flex'; requestAnimationFrame(()=>{popup.classList.add('show');document.getElementById('confirmYes').focus();}); document.addEventListener('keydown', handleConfirmKeys); }
+function hideConfirm(){ const popup=document.getElementById('confirmPopup'); popup.classList.remove('show'); setTimeout(()=>popup.style.display='none',250); pendingDeleteIndex=null; document.removeEventListener('keydown', handleConfirmKeys); }
+function handleConfirmKeys(e) {
+    if (pendingDeleteIndex !== null) {
+        const yesBtn = document.getElementById('confirmYes');
+        const noBtn = document.getElementById('confirmNo');
+
+        if (e.key === 'Enter') {
+            yesBtn.click();
+        } else if (e.key === 'Escape') {
+            noBtn.click();
+        } else if (e.key === 'Tab') {
+            e.preventDefault(); // chặn Tab mặc định
+            if (document.activeElement === yesBtn) {
+                noBtn.focus();
+            } else {
+                yesBtn.focus();
+            }
+        }
+    }
+}
+
 document.getElementById('confirmYes').onclick = ()=>{ if(pendingDeleteIndex !== null){ data.splice(pendingDeleteIndex,1); saveState(); render(); } hideConfirm(); };
 document.getElementById('confirmNo').onclick = hideConfirm;
 
-document.addEventListener('keydown',(e)=>{ if(e.key==='Escape'){ hideConfirm(); hideDataPopup(); } });
+document.addEventListener('keydown',(e)=>{ if(e.key==='Escape'){hideDataPopup(); } });
 
 document.getElementById('createBtn').onclick = createNew;
 document.getElementById('searchInput').oninput = ()=>{ page=1; render(); };
