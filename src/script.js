@@ -30,6 +30,7 @@ let currentUser = null;
 const loginContainer = document.getElementById('login-container');
 const mainContainer = document.getElementById('main-container');
 const loginErrorEl = document.getElementById('loginError');
+const loaderContainer = document.getElementById('loader-container');
 
 /* ---------- UI helpers ---------- */
 function copyWithIcon(text, btnEl) {
@@ -299,7 +300,7 @@ async function createNew(){
           btnText.textContent = originalText;
           createBtn.querySelector('i').outerHTML = originalIcon;
           createBtn.disabled = false;
-        }, 500);
+        }, 900);
     }).catch(err => {
         console.error('Failed to copy link: ', err);
         createBtn.disabled = false;
@@ -531,8 +532,24 @@ document.getElementById('loginBtn').onclick = async () => {
   try {
     await signInWithEmailAndPassword(auth, email, pass);
   } catch(err) {
-    loginErrorEl.textContent = "Đăng nhập thất bại. " + err.message;
-  }
+    let friendlyMessage = "Đăng nhập thất bại. Vui lòng thử lại.";
+    
+    switch (err.code) {
+        case 'auth/invalid-credential':
+        case 'auth/user-not-found':
+        case 'auth/wrong-password':
+            friendlyMessage = "Sai email hoặc mật khẩu. Vui lòng kiểm tra lại.";
+            break;
+        case 'auth/invalid-email':
+            friendlyMessage = "Địa chỉ email không hợp lệ.";
+            break;
+        case 'auth/too-many-requests':
+            friendlyMessage = "Bạn đã thử đăng nhập quá nhiều lần. Vui lòng thử lại sau.";
+            break;
+    }
+    
+    loginErrorEl.textContent = friendlyMessage;
+}
 };
 
 document.getElementById('logoutBtn').onclick = async () => {
@@ -540,6 +557,11 @@ document.getElementById('logoutBtn').onclick = async () => {
 };
 
 onAuthStateChanged(auth, user => {
+
+  if (loaderContainer) {
+    loaderContainer.style.display = 'none';
+  }
+
   currentUser = user;
   if (user) {
     loginContainer.style.display = 'none';
