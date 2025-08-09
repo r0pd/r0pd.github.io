@@ -1,56 +1,29 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-<meta charset="UTF-8">
-<title>Redirect...</title>
-<link rel="icon" type="image/png" href="./img/logo.png" />
-</head>
-<body style="background:black;color:white;margin:0;">
+<body>
 <script>
-(function(){
-  function show(msg){ document.body.innerHTML = "<h1 style='color:white;background:black;text-align:center;padding:20px;margin:0'>"+msg+"</h1>"; }
+const MAX_PARTS = 100; // Số file tối đa cần thử
+const code = window.location.pathname.substring(1);
 
-  const rawPath = decodeURIComponent(location.pathname || '');
-  const parts = rawPath.split('/').filter(Boolean);
-  const code = parts.length ? parts[parts.length - 1] : '';
+async function findAndRedirect() {
+  for (let i = 1; i <= MAX_PARTS; i++) {
+    try {
+      const resp = await fetch(`/data/part${i}.json`);
+      if (!resp.ok) continue;
 
-  if(!code || code === '404.html' || code === 'index.html'){
-    show('Không có mã rút gọn!');
-    return;
+      const links = await resp.json();
+      const match = links.find(l => l.short === code);
+
+      if (match) {
+        window.location.href = match.original;
+        return;
+      }
+    } catch (e) {
+      continue;
+    }
   }
 
-  // determine key: first two chars of code (if shorter, use the whole code)
-  const key = code.substring(0,2) || '_';
+  document.body.innerHTML = "<h1>404 - Link not found</h1>";
+}
 
-  // try candidate files: data/{key}.json, data/{key}_1.json, data/{key}_2.json ...
-  async function tryFiles(){
-    const base = 'data/' + key;
-    const candidates = [base + '.json'];
-    for(let i=1;i<=20;i++) candidates.push(base + '_' + i + '.json'); // try up to 20 parts
-    for(const url of candidates){
-      try{
-        const resp = await fetch(url, {cache:'no-cache'});
-        if(!resp.ok) continue;
-        const arr = await resp.json();
-        if(!Array.isArray(arr)) continue;
-        const found = arr.find(l => String(l.short) === code || String(l.code) === code);
-        if(found){
-          const dest = found.original || found.url || found.link;
-          if(dest){ location.replace(dest); return true; }
-        }
-      }catch(e){ /* ignore and continue */ }
-    }
-    return false;
-  }
-
-  (async function(){
-    const ok = await tryFiles();
-    if(!ok){
-      show('Link không tồn tại hoặc không thể tải dữ liệu.');
-    }
-  })();
-
-})();
+findAndRedirect();
 </script>
 </body>
-</html>

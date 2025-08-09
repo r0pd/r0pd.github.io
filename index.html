@@ -291,45 +291,44 @@ function genCode(){
 
 function saveState(){ window._links_working = data; }
 
-// EXPORT: group by first 2 chars of short, split files if > MAX_FILE_BYTES
+// EXPORT: MAX_FILE_BYTES
 async function exportFile(){
-  if(!data.length){ alert('Không có dữ liệu để xuất'); return; }
-  const groups = {};
-  data.forEach(link => {
-    const key = String(link.short || '').substring(0,2) || '_';
-    if(!groups[key]) groups[key]=[];
-    groups[key].push(link);
-  });
+  const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5MB
+  if (!data.length) { 
+    alert('Không có dữ liệu để xuất'); 
+    return; 
+  }
 
   const filesToDownload = [];
-  for(const key in groups){
-    const items = groups[key];
-    // split into chunks by MAX_FILE_BYTES (greedy)
-    let temp = [];
-    let partIdx = 1;
-    for(const it of items){
-      temp.push(it);
-      const blob = new Blob([JSON.stringify(temp, null,2)], {type:'application/json'});
-      if(blob.size > MAX_FILE_BYTES){
-        // remove last, flush previous chunk
-        temp.pop();
-        if(temp.length){
-          const name = (partIdx===1 && temp.length===items.length) ? `${key}.json` : `${key}_${partIdx}.json`;
-          filesToDownload.push({name, content: JSON.stringify(temp, null,2)});
-          partIdx++;
-        }
-        temp = [it];
+  let temp = [];
+  let partIdx = 1;
+
+  for (const it of data) {
+    temp.push(it);
+    const blob = new Blob([JSON.stringify(temp, null, 2)], { type: 'application/json' });
+
+    if (blob.size > MAX_FILE_BYTES) {
+      temp.pop();
+      if (temp.length) {
+        filesToDownload.push({
+          name: `part${partIdx}.json`,
+          content: JSON.stringify(temp, null, 2)
+        });
+        partIdx++;
       }
-    }
-    if(temp.length){
-      const name = (partIdx===1 && temp.length===items.length) ? `${key}.json` : `${key}_${partIdx}.json`;
-      filesToDownload.push({name, content: JSON.stringify(temp, null,2)});
+      temp = [it];
     }
   }
 
-  // download files (will prompt multiple downloads)
-  for(const f of filesToDownload){
-    const blob = new Blob([f.content], {type:'application/json'});
+  if (temp.length) {
+    filesToDownload.push({
+      name: `part${partIdx}.json`,
+      content: JSON.stringify(temp, null, 2)
+    });
+  }
+
+  for (const f of filesToDownload) {
+    const blob = new Blob([f.content], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -340,9 +339,9 @@ async function exportFile(){
     URL.revokeObjectURL(url);
   }
 
-  // Suggest delete candidates: list of previously imported files
-  if(importedFileNames.length){
-    document.getElementById('deleteCandidates').textContent = 'Gợi ý xóa (tên file đã nhập, nên xóa khỏi repo nếu đã gộp):\n' + importedFileNames.join('\n');
+  if (importedFileNames.length) {
+    document.getElementById('deleteCandidates').textContent =
+      'Gợi ý xóa (tên file đã nhập, nên xóa khỏi repo nếu đã gộp):\n' + importedFileNames.join('\n');
   }
   alert('Xuất xong. Tải các file trong thư mục data/ rồi upload lên GitHub (ghi đè nếu cần).');
 }
