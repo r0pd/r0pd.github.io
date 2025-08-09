@@ -35,7 +35,7 @@ h1{font-size:22px;margin:0}
 .btn.danger{background:#d9534f}
 .input, input[type="text"], textarea{background:var(--panel);border:1px solid rgba(255,255,255,0.03);padding:10px;border-radius:8px;color:#eaf2ff;font-family:inherit}
 
-/* --- NEW: Create Link Section Styles --- */
+/* --- Create Link Section Styles --- */
 .create-container {
     background: var(--panel);
     padding: 16px;
@@ -45,93 +45,16 @@ h1{font-size:22px;margin:0}
 }
 .create-form {
     display: flex;
-    align-items: center;
-    gap: 12px;
-    background: var(--bg);
-    border-radius: 10px;
-    padding: 8px;
-    border: 1px solid rgba(255,255,255,0.04);
-}
-.create-form .form-icon {
-    color: var(--accent-2);
-    font-size: 20px;
-    padding-left: 8px;
-}
-.create-form .input {
-    flex-grow: 1;
-    border: none;
-    background: transparent;
-    font-size: 16px;
-    padding: 10px 0;
-}
-.create-form .input:focus {
-    outline: none;
-}
-.create-form .btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 18px;
-    font-size: 16px;
-    white-space: nowrap;
-}
-.create-form .btn .btn-icon {
-    transition: transform 0.3s ease;
-}
-.create-form .btn:hover .btn-icon {
-    transform: rotate(90deg);
-}
-
-/* MODIFIED: Container for Info and Search */
-.info-search-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap; /* Allows items to wrap on smaller screens */
-    gap: 12px; /* Adds space between items when they wrap */
-    margin-top: 24px;
-}
-
-/* MODIFIED: Search-wrap no longer needs top margin */
-.search-wrap{display:flex;justify-content:flex-end;flex:0 0 260px;}
-.search-input{width:100%;font-size: 16px;padding:8px;border-radius:8px;background:var(--panel);border:1px solid rgba(255,255,255,0.03);color:#eaf2ff;box-sizing:border-box}
-
-table{width:100%;border-collapse:collapse;margin-top:14px;border-radius:8px;overflow:hidden;background:transparent; table-layout: fixed;}
-thead th{background:rgba(20,28,40,0.6);text-align:left;padding:12px;font-weight:600;color:var(--accent-2);font-size:16px}
-tbody tr{border-bottom:1px solid rgba(255,255,255,0.03)}
-td{padding:10px;vertical-align:middle;font-size:16px; overflow: hidden;}
-tbody tr:hover{background:rgba(255,255,255,0.01)}
-.copy-btn{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:10px;border-radius:8px;cursor:pointer;margin-right:8px;color:var(--muted); flex-shrink: 0;}
-
-/* --- NEW: Table Cell Alignment & Overflow Styles --- */
-.cell-content-wrapper {
-    display: flex;
-    align-items: center;
-    min-width: 0; /* Important for flexbox truncation */
-}
-.link-text {
-    color: #dfefff;
-    text-decoration: none;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.link-short {
-    font-weight: 500;
-}
-
-/* --- NEW Styles for Create Link Section --- */
-.create-form {
-    flex-direction: column; /* Sắp xếp các mục theo chiều dọc */
-    align-items: stretch; /* Kéo dài các mục để bằng chiều rộng */
+    flex-direction: column; 
+    align-items: stretch;
 }
 
 .input-group {
     display: flex;
-    flex-direction: column; /* Mặc định xếp chồng lên nhau */
+    flex-direction: column;
     gap: 8px;
     width: 100%;
-    margin-bottom: 12px; /* Thêm khoảng cách với nút Tạo */
+    margin-bottom: 12px;
 }
 
 .input-row {
@@ -140,9 +63,21 @@ tbody tr:hover{background:rgba(255,255,255,0.01)}
     gap: 12px;
     background: var(--bg);
     border-radius: 10px;
-    padding: 0 8px; /* Bỏ padding dọc, chỉ giữ ngang */
+    padding: 0 8px;
     border: 1px solid rgba(255,255,255,0.04);
 }
+
+/* *** START: CSS MỚI *** */
+.dual-input-row {
+    display: flex;
+    gap: 8px; /* Giữ khoảng cách đồng bộ */
+}
+.dual-input-row > .input-row {
+    flex: 1; /* Chia đều không gian cho 2 ô input */
+    min-width: 0;
+}
+/* *** END: CSS MỚI *** */
+
 
 .input-row .form-icon {
     color: var(--accent-2);
@@ -155,13 +90,12 @@ tbody tr:hover{background:rgba(255,255,255,0.01)}
     border: none;
     background: transparent;
     font-size: 16px;
-    padding: 12px 0; /* Thêm padding dọc ở đây */
+    padding: 12px 0;
 }
 .input-row .input:focus {
     outline: none;
 }
 
-/* Thêm style cho phần hiển thị domain */
 .domain-prefix {
     color: var(--muted);
     font-size: 16px;
@@ -169,15 +103,65 @@ tbody tr:hover{background:rgba(255,255,255,0.01)}
 }
 
 .create-form .btn {
-    width: 100%; /* Nút Tạo sẽ chiếm toàn bộ chiều rộng */
-    justify-content: center; /* Căn giữa nội dung nút */
-    padding: 12px 18px; /* Tăng padding cho nút chính */
+    width: 100%; 
+    justify-content: center;
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+.create-form .btn .btn-icon {
+    transition: transform 0.3s ease;
+}
+.create-form .btn:hover .btn-icon {
+    transform: rotate(90deg);
 }
 
-/* Điều chỉnh cho màn hình lớn hơn */
+
+.info-search-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.search-wrap{display:flex;justify-content:flex-end;flex:0 0 260px;}
+.search-input{width:100%;font-size: 16px;padding:8px;border-radius:8px;background:var(--panel);border:1px solid rgba(255,255,255,0.03);color:#eaf2ff;box-sizing:border-box}
+
+table{width:100%;border-collapse:collapse;margin-top:14px;border-radius:8px;overflow:hidden;background:transparent; table-layout: fixed;}
+thead th{background:rgba(20,28,40,0.6);text-align:left;padding:12px;font-weight:600;color:var(--accent-2);font-size:16px}
+tbody tr{border-bottom:1px solid rgba(255,255,255,0.03)}
+td{padding:10px;vertical-align:middle;font-size:16px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;}
+tbody tr:hover{background:rgba(255,255,255,0.01)}
+.copy-btn{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:10px;border-radius:8px;cursor:pointer;margin-right:8px;color:var(--muted); flex-shrink: 0;}
+
+.cell-content-wrapper {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+}
+.link-text {
+    color: #dfefff;
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.link-short {
+    font-weight: 500;
+}
+.title-text {
+    color: var(--muted);
+    font-style: italic;
+}
+
+
 @media (min-width: 821px) {
     .create-form {
-        flex-direction: row; /* Chuyển về layout ngang */
+        flex-direction: row;
         align-items: center;
         gap: 12px;
     }
@@ -186,11 +170,9 @@ tbody tr:hover{background:rgba(255,255,255,0.01)}
         margin-bottom: 0;
     }
     .create-form .btn {
-        width: auto; /* Thu hẹp nút lại */
+        width: auto;
     }
 }
-
-
 
 .action-btn{width:36px;height:36px;border-radius:8px;border:none;cursor:pointer;color:#0a0a0a}
 .action-edit{background:#f7b955}
@@ -252,17 +234,23 @@ tbody tr:hover{background:rgba(255,255,255,0.01)}
       </div>
        <span id="fileName">Chưa có tệp</span>
 
-<div class="create-container">
+      <div class="create-container">
         <div class="create-form">
             <div class="input-group">
                 <div class="input-row">
                     <i class="fa fa-link form-icon"></i>
                     <input id="originalInput" class="input" placeholder="Dán link gốc của bạn vào đây..."/>
                 </div>
-                <div class="input-row">
-                    <i class="fa fa-pencil-alt form-icon" style="color: var(--muted);"></i>
-                    <span id="domainPrefix" class="domain-prefix"></span>
-                    <input id="customAliasInput" class="input" placeholder="...mã tùy chỉnh (tùy chọn)"/>
+                <div class="dual-input-row">
+                    <div class="input-row">
+                        <i class="fa fa-pencil-alt form-icon" style="color: var(--muted);"></i>
+                        <span id="domainPrefix" class="domain-prefix"></span>
+                        <input id="customAliasInput" class="input" placeholder="...mã tùy chỉnh"/>
+                    </div>
+                    <div class="input-row">
+                        <i class="fa fa-tag form-icon" style="color: var(--muted);"></i>
+                        <input id="titleInput" class="input" placeholder="...thêm tiêu đề"/>
+                    </div>
                 </div>
             </div>
             <button id="createBtn" class="btn">
@@ -270,25 +258,24 @@ tbody tr:hover{background:rgba(255,255,255,0.01)}
             </button>
         </div>
       </div>
-
       <div class="info-search-bar">
         <div id="infoLine" style="color:var(--muted);font-size:15px"></div>
         <div class="search-wrap">
-          <input id="searchInput" class="search-input" placeholder="Tìm kiếm mã hoặc link..." />
+          <input id="searchInput" class="search-input" placeholder="Tìm kiếm mã, link hoặc tiêu đề..." />
         </div>
       </div>
 
       <table>
         <thead>
           <tr>
-            <th style="width:150px">Rút gọn</th>
+            <th style="width:20%">Rút gọn</th>
+            <th style="width:20%">Tiêu đề</th>
             <th>Link gốc</th>
             <th style="width:140px; text-align:right;">Hành động</th>
           </tr>
         </thead>
         <tbody id="tableBody"></tbody>
       </table>
-
       <div class="pagination" id="pagination"></div>
 
       <div id="importedFilesList"></div>
@@ -367,7 +354,13 @@ function copyWithIcon(text, btnEl) {
 function render(){
   document.getElementById('infoLine').textContent = `Tổng link hiện có: ${data.length}`;
   const q = (document.getElementById('searchInput').value||"").toLowerCase();
-  const filtered = data.filter(d => (d.short||'').toLowerCase().includes(q) || (d.original||'').toLowerCase().includes(q));
+  
+  const filtered = data.filter(d => 
+      (d.short||'').toLowerCase().includes(q) || 
+      (d.original||'').toLowerCase().includes(q) ||
+      (d.title||'').toLowerCase().includes(q)
+  );
+
   const totalPg = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   if(page>totalPg) page = totalPg;
   const start = (page-1)*PER_PAGE;
@@ -379,7 +372,7 @@ function render(){
     const realIndex = start + idx;
     const tr = document.createElement('tr');
 
-    // MODIFIED: Restructured table cells for better layout and overflow handling
+    // --- Ô rút gọn ---
     const tdShort = document.createElement('td');
     const shortWrapper = document.createElement('div');
     shortWrapper.className = 'cell-content-wrapper';
@@ -400,6 +393,13 @@ function render(){
     shortWrapper.appendChild(shortLink);
     tdShort.appendChild(shortWrapper);
 
+    // --- Ô Tiêu đề ---
+    const tdTitle = document.createElement('td');
+    tdTitle.textContent = item.title || '';
+    tdTitle.className = 'title-text';
+    tdTitle.title = item.title || '';
+
+    // --- Ô link gốc ---
     const tdOrig = document.createElement('td');
     const origWrapper = document.createElement('div');
     origWrapper.className = 'cell-content-wrapper';
@@ -421,6 +421,7 @@ function render(){
     origWrapper.appendChild(origLink);
     tdOrig.appendChild(origWrapper);
 
+    // --- Ô hành động ---
     const tdAct = document.createElement('td');
     tdAct.style.textAlign = 'right';
 
@@ -441,6 +442,7 @@ function render(){
     tdAct.appendChild(delBtn);
 
     tr.appendChild(tdShort);
+    tr.appendChild(tdTitle);
     tr.appendChild(tdOrig);
     tr.appendChild(tdAct);
     tbody.appendChild(tr);
@@ -459,7 +461,6 @@ function render(){
   document.getElementById('dataTextarea').value = JSON.stringify(data, null, 2);
 }
 
-/* ---------- Edit / create UI logic ---------- */
 function startEdit(i, rowEl){
   const item = data[i];
   
@@ -469,6 +470,12 @@ function startEdit(i, rowEl){
   shortInput.value = item.short;
   tdShort.appendChild(shortInput);
 
+  const tdTitle = document.createElement('td');
+  const titleInput = document.createElement('input');
+  titleInput.className = 'table-edit-input';
+  titleInput.value = item.title || '';
+  tdTitle.appendChild(titleInput);
+  
   const tdOrig = document.createElement('td');
   const origInput = document.createElement('input');
   origInput.className = 'table-edit-input';
@@ -486,8 +493,11 @@ function startEdit(i, rowEl){
   saveBtn.onclick = async ()=> {
     const ns = shortInput.value.trim();
     const no = origInput.value.trim();
+    const nt = titleInput.value.trim();
     if(!ns || !no) return;
     const oldShort = item.short;
+
+    const payload = { original: no, title: nt };
 
     try {
       if (ns !== oldShort) {
@@ -495,12 +505,13 @@ function startEdit(i, rowEl){
         if (existing.exists()) {
           return alert("Mã rút gọn mới đã tồn tại. Chọn mã khác.");
         }
-        await setDoc(doc(db, "links", ns), { original: no });
+        await setDoc(doc(db, "links", ns), payload);
         await deleteDoc(doc(db, "links", oldShort));
-        data[i] = { short: ns, original: no };
+        data[i] = { short: ns, original: no, title: nt };
       } else {
-        await updateDoc(doc(db, "links", ns), { original: no });
+        await updateDoc(doc(db, "links", ns), payload);
         data[i].original = no;
+        data[i].title = nt;
       }
       render();
     } catch (err) {
@@ -521,6 +532,7 @@ function startEdit(i, rowEl){
 
   rowEl.innerHTML = '';
   rowEl.appendChild(tdShort);
+  rowEl.appendChild(tdTitle);
   rowEl.appendChild(tdOrig);
   rowEl.appendChild(tdAct);
   shortInput.focus();
@@ -531,6 +543,7 @@ async function createNew(){
 
   const orig = document.getElementById('originalInput').value.trim();
   const customAlias = document.getElementById('customAliasInput').value.trim();
+  const title = document.getElementById('titleInput').value.trim();
   
   if (!orig) {
       alert("Vui lòng nhập link gốc.");
@@ -582,7 +595,11 @@ async function createNew(){
     }
   }
   try {
-    await setDoc(doc(db, "links", code), { original: orig });
+    const payload = { original: orig };
+    if (title) {
+        payload.title = title;
+    }
+    await setDoc(doc(db, "links", code), payload);
     
     const newUrl = `${location.origin}/${code}`;
     navigator.clipboard.writeText(newUrl).then(() => {
@@ -602,10 +619,11 @@ async function createNew(){
         console.error('Failed to copy link: ', err);
         createBtn.disabled = false;
     });
-
-    data.unshift({ short: code, original: orig }); 
+    
+    data.unshift({ short: code, original: orig, title: title }); 
     document.getElementById('originalInput').value = '';
     document.getElementById('customAliasInput').value = '';
+    document.getElementById('titleInput').value = '';
     page = 1; 
     render();
   } catch (err) {
@@ -669,7 +687,6 @@ async function exportFile(){
   alert('Xuất xong. Tải các file trong thư mục data/ rồi upload lên GitHub (ghi đè nếu cần).');
 }
 
-/* ---------- IMPORT (JSON only) ---------- */
 function importSelectedFiles(files){
   if(!files || !files.length) return;
   importedFileNames = importedFileNames.concat(Array.from(files).map(f=>f.name));
@@ -685,8 +702,13 @@ function importSelectedFiles(files){
             arr.forEach(it=>{
               if(!it || !it.short) return;
               const id = String(it.short);
-              const original = String(it.original);
-              batch.set(doc(db, "links", id), { original });
+              const payload = {
+                  original: String(it.original)
+              };
+              if (it.title) {
+                  payload.title = String(it.title);
+              }
+              batch.set(doc(db, "links", id), payload);
             });
             await batch.commit();
           }
@@ -704,7 +726,6 @@ function importFolderFiles(fileList){
   importSelectedFiles(jsonFiles);
 }
 
-/* ---------- Data popup save => overwrite collection ---------- */
 document.getElementById('saveDataBtn').onclick = async function(){
   if (!currentUser) return alert("Vui lòng đăng nhập admin trước khi lưu dữ liệu!");
   try{
@@ -712,15 +733,19 @@ document.getElementById('saveDataBtn').onclick = async function(){
     if(!Array.isArray(arr)) return alert('Dữ liệu không hợp lệ');
 
     const newMap = new Map();
-    arr.forEach(it => { if(it && it.short) newMap.set(String(it.short), String(it.original||"")); });
+    arr.forEach(it => { if(it && it.short) newMap.set(String(it.short), { original: String(it.original||""), title: String(it.title||"") }); });
 
     const snap = await getDocs(collection(db, "links"));
     const existingIds = new Set();
     snap.forEach(d => existingIds.add(d.id));
 
     const batch = writeBatch(db);
-    for (const [short, original] of newMap.entries()) {
-      batch.set(doc(db, "links", short), { original });
+    for (const [short, value] of newMap.entries()) {
+      const payload = { original: value.original };
+      if (value.title) {
+          payload.title = value.title;
+      }
+      batch.set(doc(db, "links", short), payload);
       existingIds.delete(short);
     }
     for (const id of existingIds) {
@@ -735,6 +760,7 @@ document.getElementById('saveDataBtn').onclick = async function(){
     alert("Lỗi khi lưu dữ liệu: " + e.message);
   }
 };
+
 
 /* ---------- Confirm delete handlers ---------- */
 function showConfirm(index) {
@@ -775,7 +801,6 @@ document.getElementById('createBtn').onclick = createNew;
 document.getElementById('originalInput').addEventListener('keyup', (event) => {
     if (event.key === "Enter") {
         event.preventDefault();
-        createNew();
     }
 });
 document.getElementById('searchInput').oninput = ()=>{ page=1; render(); };
@@ -793,14 +818,17 @@ document.getElementById('adminEmail').addEventListener('keyup', handleLoginOnEnt
 document.getElementById('adminPass').addEventListener('keyup', handleLoginOnEnter);
 
 
-/* ---------- LOAD from Firestore ---------- */
 async function loadLinks(){
   try {
     const snapshot = await getDocs(collection(db, "links"));
     data = [];
     snapshot.forEach(docSnap => {
       const obj = docSnap.data();
-      data.push({ short: docSnap.id, original: obj.original||"" });
+      data.push({ 
+        short: docSnap.id, 
+        original: obj.original||"",
+        title: obj.title||""
+      });
     });
     data.sort((a,b)=>a.short.localeCompare(b.short));
     page = 1;
@@ -810,6 +838,7 @@ async function loadLinks(){
     alert("Lỗi khi load dữ liệu từ Firestore: " + err.message);
   }
 }
+
 
 /* ---------- AUTHENTICATION ---------- */
 document.getElementById('loginBtn').onclick = async () => {
@@ -822,7 +851,6 @@ document.getElementById('loginBtn').onclick = async () => {
   }
   try {
     await signInWithEmailAndPassword(auth, email, pass);
-    // onAuthStateChanged will handle UI switching
   } catch(err) {
     loginErrorEl.textContent = "Đăng nhập thất bại. " + err.message;
   }
@@ -830,26 +858,22 @@ document.getElementById('loginBtn').onclick = async () => {
 
 document.getElementById('logoutBtn').onclick = async () => {
   await signOut(auth);
-  // onAuthStateChanged will handle UI switching
 };
 
-/* Auth state change listener: The core of the new login flow */
 onAuthStateChanged(auth, user => {
   currentUser = user;
   if (user) {
-    // User is signed in
     loginContainer.style.display = 'none';
     mainContainer.style.display = 'block';
     document.getElementById('authStatus').textContent = `Đã đăng nhập: ${user.email}`;
     document.getElementById('domainPrefix').textContent = location.origin.replace(/https?:\/\//, '') + '/';
-    loginErrorEl.textContent = ''; // Clear any previous errors
-    loadLinks(); // Load data only after successful login
+    loginErrorEl.textContent = '';
+    loadLinks();
   } else {
-    // User is signed out
     loginContainer.style.display = 'flex';
     mainContainer.style.display = 'none';
-    data = []; // Clear data on logout
-    render(); // Re-render to clear the table
+    data = [];
+    render();
   }
 });
 
