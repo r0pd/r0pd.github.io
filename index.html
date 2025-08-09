@@ -65,17 +65,15 @@ tbody tr:hover{background:rgba(255,255,255,0.01)}
     <span id="fileName">Chưa có tệp</span>
     <div class="top-row">
       <div class="controls">
-        <label class="file-label" for="importFile"><i class="fa fa-file-import"></i>&nbsp; Chọn tệp (.js)</label>
+        <button class="btn warn" id="showDataBtn"><i class="fa fa-database"></i>&nbsp; Dữ liệu</button>
+        <label class="file-label" for="importFile"><i class="fa fa-file-import"></i>&nbsp; Tệp (.js)</label>
         <input type="file" id="importFile" accept=".js" style="display:none">
-        
-        <label class="file-label" for="importFiles"><i class="fa fa-file-import"></i>&nbsp; Nhập file lẻ (.json)</label>
+        <label class="file-label" for="importFiles"><i class="fa fa-file-import"></i>&nbsp; File lẻ (.json)</label>
         <input type="file" id="importFiles" accept=".json" multiple style="display:none">
-
-        <label class="file-label" for="importFolder"><i class="fa fa-folder-open"></i>&nbsp; Nhập thư mục (/data)</label>
+        <label class="file-label" for="importFolder"><i class="fa fa-folder-open"></i>&nbsp; Thư mục</label>
         <input type="file" id="importFolder" webkitdirectory directory multiple style="display:none">
-
         <button class="btn" id="exportBtn"><i class="fa fa-file-export"></i>&nbsp; Xuất file</button>
-        <button class="btn warn" id="showDataBtn"><i class="fa fa-database"></i>&nbsp; Xem / Chỉnh dữ liệu</button>
+        
       </div>
     </div>
 
