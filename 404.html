@@ -28,7 +28,8 @@
 <h1>Đang chuyển hướng...</h1>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+// Thêm updateDoc và increment vào đây
+import { getFirestore, doc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAIGu_5QNMvzrObPNxHdG9kybBQtAddGsw",
@@ -51,10 +52,22 @@ async function findAndRedirect() {
       document.body.innerHTML = "<h1>404 - Link not found</h1>";
       return;
     }
-    const docSnap = await getDoc(doc(db, "links", code));
+    const docRef = doc(db, "links", code);
+    const docSnap = await getDoc(docRef);
+
     if (docSnap.exists()) {
+      // Lấy link gốc để chuẩn bị chuyển hướng
       const original = docSnap.data().original || "/";
+      
+      // Chuyển hướng người dùng ngay lập tức
       window.location.href = original;
+      
+      // Cập nhật số lượt nhấp một cách bất đồng bộ ở chế độ "fire-and-forget"
+      // Thao tác này sẽ chạy ở background mà không làm chậm việc chuyển hướng
+      updateDoc(docRef, {
+          clicks: increment(1)
+      });
+
     } else {
       document.body.innerHTML = "<h1>404 - Link not found</h1>";
     }

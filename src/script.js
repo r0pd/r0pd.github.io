@@ -73,6 +73,9 @@ function render() {
     shortWrapper.appendChild(shortLink);
     tdShort.appendChild(shortWrapper);
 
+    const tdClicks = document.createElement('td');
+    tdClicks.textContent = item.clicks || 0;
+
     // --- Ô Tiêu đề ---
     const tdTitle = document.createElement('td');
     tdTitle.textContent = item.title || '';
@@ -122,6 +125,7 @@ function render() {
     tdAct.appendChild(delBtn);
 
     tr.appendChild(tdShort);
+    tr.appendChild(tdClicks);
     tr.appendChild(tdTitle);
     tr.appendChild(tdOrig);
     tr.appendChild(tdAct);
@@ -165,6 +169,9 @@ function startEdit(i, rowEl){
   origInput.value = item.original;
   tdOrig.appendChild(origInput);
 
+  const tdClicks = document.createElement('td');
+  tdClicks.textContent = item.clicks || 0;
+
   const tdAct = document.createElement('td');
   tdAct.style.textAlign = 'right';
 
@@ -179,8 +186,11 @@ function startEdit(i, rowEl){
     const nt = titleInput.value.trim();
     if(!ns || !no) return;
     const oldShort = item.short;
-
-    const payload = { original: no, title: nt };
+    const payload = { 
+      original: no, 
+      title: nt,
+      clicks: item.clicks || 0 
+    };
 
     try {
       if (ns !== oldShort) {
@@ -190,7 +200,7 @@ function startEdit(i, rowEl){
         }
         await setDoc(doc(db, "links", ns), payload);
         await deleteDoc(doc(db, "links", oldShort));
-        data[i] = { short: ns, original: no, title: nt };
+        data[i] = { short: ns, original: no, title: nt, clicks: item.clicks || 0 };
       } else {
         await updateDoc(doc(db, "links", ns), payload);
         data[i].original = no;
@@ -215,6 +225,7 @@ function startEdit(i, rowEl){
 
   rowEl.innerHTML = '';
   rowEl.appendChild(tdShort);
+  rowEl.appendChild(tdClicks);
   rowEl.appendChild(tdTitle);
   rowEl.appendChild(tdOrig);
   rowEl.appendChild(tdAct);
@@ -278,7 +289,7 @@ async function createNew(){
     }
   }
   try {
-    const payload = { original: orig };
+    const payload = { original: orig, clicks: 0 };
     if (title) {
         payload.title = title;
     }
@@ -303,7 +314,7 @@ async function createNew(){
         createBtn.disabled = false;
     });
     
-    data.unshift({ short: code, original: orig, title: title }); 
+    data.unshift({ short: code, original: orig, title: title, clicks: 0 }); 
     document.getElementById('originalInput').value = '';
     document.getElementById('customAliasInput').value = '';
     document.getElementById('titleInput').value = '';
@@ -367,7 +378,7 @@ async function exportFile(){
   if (importedFileNames.length) {
     document.getElementById('deleteCandidates').textContent = 'Gợi ý xóa (tên file đã nhập, nên xóa khỏi repo nếu đã gộp):\n' + importedFileNames.join('\n');
   }
-  alert('Xuất xong. Tải các file trong thư mục data/ rồi upload lên GitHub (ghi đè nếu cần).');
+  alert('Hoàn thành.');
 }
 
 function importSelectedFiles(files){
@@ -386,7 +397,8 @@ function importSelectedFiles(files){
               if(!it || !it.short) return;
               const id = String(it.short);
               const payload = {
-                  original: String(it.original)
+                  original: String(it.original),
+                  clicks: Number(it.clicks) || 0
               };
               if (it.title) {
                   payload.title = String(it.title);
@@ -411,7 +423,7 @@ document.getElementById('saveDataBtn').onclick = async function(){
     if(!Array.isArray(arr)) return alert('Dữ liệu không hợp lệ');
 
     const newMap = new Map();
-    arr.forEach(it => { if(it && it.short) newMap.set(String(it.short), { original: String(it.original||""), title: String(it.title||"") }); });
+    arr.forEach(it => { if(it && it.short) newMap.set(String(it.short), { original: String(it.original||""), title: String(it.title||""), clicks: Number(it.clicks) || 0 }); });
 
     const snap = await getDocs(collection(db, "links"));
     const existingIds = new Set();
@@ -419,7 +431,10 @@ document.getElementById('saveDataBtn').onclick = async function(){
 
     const batch = writeBatch(db);
     for (const [short, value] of newMap.entries()) {
-      const payload = { original: value.original };
+      const payload = { 
+        original: value.original,
+        clicks: value.clicks 
+      };
       if (value.title) {
           payload.title = value.title;
       }
@@ -558,7 +573,8 @@ async function loadLinks(targetPage = 1, searchQuery = '') {
       data.push({
         short: docSnap.id,
         original: obj.original || "",
-        title: obj.title || ""
+        title: obj.title || "",
+        clicks: obj.clicks || 0
       });
     });
 
