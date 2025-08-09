@@ -120,6 +120,78 @@ tbody tr:hover{background:rgba(255,255,255,0.01)}
     font-weight: 500;
 }
 
+/* --- NEW Styles for Create Link Section --- */
+.create-form {
+    flex-direction: column; /* Sắp xếp các mục theo chiều dọc */
+    align-items: stretch; /* Kéo dài các mục để bằng chiều rộng */
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column; /* Mặc định xếp chồng lên nhau */
+    gap: 8px;
+    width: 100%;
+    margin-bottom: 12px; /* Thêm khoảng cách với nút Tạo */
+}
+
+.input-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 0 8px; /* Bỏ padding dọc, chỉ giữ ngang */
+    border: 1px solid rgba(255,255,255,0.04);
+}
+
+.input-row .form-icon {
+    color: var(--accent-2);
+    font-size: 20px;
+    padding-left: 8px;
+}
+
+.input-row .input {
+    flex-grow: 1;
+    border: none;
+    background: transparent;
+    font-size: 16px;
+    padding: 12px 0; /* Thêm padding dọc ở đây */
+}
+.input-row .input:focus {
+    outline: none;
+}
+
+/* Thêm style cho phần hiển thị domain */
+.domain-prefix {
+    color: var(--muted);
+    font-size: 16px;
+    white-space: nowrap;
+}
+
+.create-form .btn {
+    width: 100%; /* Nút Tạo sẽ chiếm toàn bộ chiều rộng */
+    justify-content: center; /* Căn giữa nội dung nút */
+    padding: 12px 18px; /* Tăng padding cho nút chính */
+}
+
+/* Điều chỉnh cho màn hình lớn hơn */
+@media (min-width: 821px) {
+    .create-form {
+        flex-direction: row; /* Chuyển về layout ngang */
+        align-items: center;
+        gap: 12px;
+    }
+    .input-group {
+        flex-grow: 1;
+        margin-bottom: 0;
+    }
+    .create-form .btn {
+        width: auto; /* Thu hẹp nút lại */
+    }
+}
+
+
+
 .action-btn{width:36px;height:36px;border-radius:8px;border:none;cursor:pointer;color:#0a0a0a}
 .action-edit{background:#f7b955}
 .action-save{background:var(--accent-2);color:#0a0a0a}
@@ -180,12 +252,21 @@ tbody tr:hover{background:rgba(255,255,255,0.01)}
       </div>
        <span id="fileName">Chưa có tệp</span>
 
-       <div class="create-container">
+<div class="create-container">
         <div class="create-form">
-            <i class="fa fa-link form-icon"></i>
-            <input id="originalInput" class="input" placeholder="Dán link gốc của bạn vào đây để rút gọn..."/>
+            <div class="input-group">
+                <div class="input-row">
+                    <i class="fa fa-link form-icon"></i>
+                    <input id="originalInput" class="input" placeholder="Dán link gốc của bạn vào đây..."/>
+                </div>
+                <div class="input-row">
+                    <i class="fa fa-pencil-alt form-icon" style="color: var(--muted);"></i>
+                    <span id="domainPrefix" class="domain-prefix"></span>
+                    <input id="customAliasInput" class="input" placeholder="...mã tùy chỉnh (tùy chọn)"/>
+                </div>
+            </div>
             <button id="createBtn" class="btn">
-                <span class="btn-text">Tạo</span>&nbsp;<i class="fa fa-magic btn-icon"></i>
+                <span class="btn-text">Tạo Link</span>&nbsp;<i class="fa fa-magic btn-icon"></i>
             </button>
         </div>
       </div>
@@ -447,23 +528,52 @@ function startEdit(i, rowEl){
 
 async function createNew(){
   if (!currentUser) return alert("Vui lòng đăng nhập admin để tạo link.");
-  const orig = document.getElementById('originalInput').value.trim();
-  if(!orig) return;
-  
-  const createBtn = document.getElementById('createBtn');
-  createBtn.disabled = true; // Prevent multiple clicks
 
-  let code = genCode();
-  let tries = 0;
-  while (tries < 10) {
+  const orig = document.getElementById('originalInput').value.trim();
+  const customAlias = document.getElementById('customAliasInput').value.trim();
+  
+  if (!orig) {
+      alert("Vui lòng nhập link gốc.");
+      return;
+  }
+
+  const createBtn = document.getElementById('createBtn');
+  createBtn.disabled = true;
+
+  let code = customAlias;
+
+  if (code) {
+    if (!/^[a-zA-Z0-9_-]+$/.test(code)) {
+        alert("Mã tùy chỉnh chỉ được chứa chữ cái (a-z, A-Z), số (0-9), dấu gạch ngang (-) và gạch dưới (_).");
+        createBtn.disabled = false;
+        return;
+    }
     const snap = await getDoc(doc(db, "links", code));
-    if (!snap.exists()) break;
-    code = genCode(); tries++;
+    if (snap.exists()) {
+      alert("Mã rút gọn này đã tồn tại. Vui lòng chọn mã khác.");
+      createBtn.disabled = false;
+      return;
+    }
+  } 
+  else {
+    let tries = 0;
+    const maxTries = 10;
+    do {
+      code = genCode();
+      const snap = await getDoc(doc(db, "links", code));
+      if (!snap.exists()) break;
+      tries++;
+    } while (tries < maxTries);
+
+    if (tries >= maxTries) {
+        alert("Không thể tạo mã ngẫu nhiên duy nhất. Vui lòng thử lại.");
+        createBtn.disabled = false;
+        return;
+    }
   }
   try {
     await setDoc(doc(db, "links", code), { original: orig });
     
-    // NEW: Auto-copy link and provide user feedback
     const newUrl = `${location.origin}/${code}`;
     navigator.clipboard.writeText(newUrl).then(() => {
         const btnText = createBtn.querySelector('.btn-text');
@@ -483,9 +593,10 @@ async function createNew(){
         createBtn.disabled = false;
     });
 
-    data.unshift({ short: code, original: orig }); // Add to top of array for immediate visibility
+    data.unshift({ short: code, original: orig }); 
     document.getElementById('originalInput').value = '';
-    page = 1; // Go to first page to see the new link
+    document.getElementById('customAliasInput').value = '';
+    page = 1; 
     render();
   } catch (err) {
     console.error(err);
@@ -721,6 +832,7 @@ onAuthStateChanged(auth, user => {
     loginContainer.style.display = 'none';
     mainContainer.style.display = 'block';
     document.getElementById('authStatus').textContent = `Đã đăng nhập: ${user.email}`;
+    document.getElementById('domainPrefix').textContent = location.origin.replace(/https?:\/\//, '') + '/';
     loginErrorEl.textContent = ''; // Clear any previous errors
     loadLinks(); // Load data only after successful login
   } else {
