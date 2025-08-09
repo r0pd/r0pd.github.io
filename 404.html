@@ -8,9 +8,7 @@
 <body style="background:black;color:white;margin:0;">
 <script>
 (function(){
-  function show(msg){
-    document.body.innerHTML = "<h1 style='color:white;background:black;text-align:center;padding:20px;margin:0'>"+msg+"</h1>";
-  }
+  function show(msg){ document.body.innerHTML = "<h1 style='color:white;background:black;text-align:center;padding:20px;margin:0'>"+msg+"</h1>"; }
 
   const rawPath = decodeURIComponent(location.pathname || '');
   const parts = rawPath.split('/').filter(Boolean);
@@ -21,47 +19,35 @@
     return;
   }
 
-  // Tạo danh sách URL khả dĩ cho links.js (thích ứng với user-page và project-page)
-  const basePath = rawPath.replace(/\/[^\/]*$/, '') || '';
-  const candidates = [
-    location.origin + basePath + '/links.js',
-    location.origin + '/links.js', 
-    'links.js' 
-  ];
+  // determine key: first two chars of code (if shorter, use the whole code)
+  const key = code.substring(0,2) || '_';
 
-  function tryEvalAndRedirect(txt){
-    try {
-      const fn = new Function(txt + '; return (typeof links !== "undefined") ? links : (typeof shortLinks !== "undefined" ? shortLinks : null);');
-      const arr = fn();
-      if(!Array.isArray(arr)) throw new Error('Không tìm thấy mảng links/shortLinks');
-
-      const found = arr.find(l => String(l.short || l.code || '').trim() === code);
-      if(found){
-        const dest = found.original || found.url || found.link;
-        if(dest){
-          location.replace(dest);
-          return true;
-        }
-      }
-      return false;
-    } catch(e){
-      console.error('tryEvalAndRedirect error:', e);
-      return false;
-    }
-  }
-
-  (async function loadAndRun(){
+  // try candidate files: data/{key}.json, data/{key}_1.json, data/{key}_2.json ...
+  async function tryFiles(){
+    const base = 'data/' + key;
+    const candidates = [base + '.json'];
+    for(let i=1;i<=20;i++) candidates.push(base + '_' + i + '.json'); // try up to 20 parts
     for(const url of candidates){
-      try {
+      try{
         const resp = await fetch(url, {cache:'no-cache'});
         if(!resp.ok) continue;
-        const txt = await resp.text();
-        if(tryEvalAndRedirect(txt)) return;
-      } catch(e){
-    
-      }
+        const arr = await resp.json();
+        if(!Array.isArray(arr)) continue;
+        const found = arr.find(l => String(l.short) === code || String(l.code) === code);
+        if(found){
+          const dest = found.original || found.url || found.link;
+          if(dest){ location.replace(dest); return true; }
+        }
+      }catch(e){ /* ignore and continue */ }
     }
-    show('Link không tồn tại hoặc không thể tải dữ liệu links.js');
+    return false;
+  }
+
+  (async function(){
+    const ok = await tryFiles();
+    if(!ok){
+      show('Link không tồn tại hoặc không thể tải dữ liệu.');
+    }
   })();
 
 })();
