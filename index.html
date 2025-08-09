@@ -556,17 +556,27 @@ async function createNew(){
     }
   } 
   else {
-    let tries = 0;
-    const maxTries = 10;
-    do {
-      code = genCode();
-      const snap = await getDoc(doc(db, "links", code));
-      if (!snap.exists()) break;
-      tries++;
-    } while (tries < maxTries);
+    let codeFound = false;
+    for (let length = 3; length <= 8; length++) {
+        let tries = 0;
+        const maxTriesPerLength = 15; 
+        do {
+            code = genCode(length);
+            const snap = await getDoc(doc(db, "links", code));
+            if (!snap.exists()) {
+                codeFound = true;
+                break;
+            }
+            tries++;
+        } while (tries < maxTriesPerLength);
 
-    if (tries >= maxTries) {
-        alert("Không thể tạo mã ngẫu nhiên duy nhất. Vui lòng thử lại.");
+        if (codeFound) {
+            break;
+        }
+    }
+
+    if (!codeFound) {
+        alert("Không thể tạo mã ngẫu nhiên duy nhất sau khi đã thử độ dài từ 3 đến 8. Vui lòng thử lại.");
         createBtn.disabled = false;
         return;
     }
@@ -587,7 +597,7 @@ async function createNew(){
           btnText.textContent = originalText;
           createBtn.querySelector('i').outerHTML = originalIcon;
           createBtn.disabled = false;
-        }, 2000);
+        }, 500);
     }).catch(err => {
         console.error('Failed to copy link: ', err);
         createBtn.disabled = false;
@@ -605,13 +615,12 @@ async function createNew(){
   }
 }
 
-function genCode(){
+function genCode(length = 8){
   const chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
   let out = "";
-  for(let i=0; i<8; i++) { out += chars.charAt(Math.floor(Math.random() * chars.length)); }
+  for(let i=0; i<length; i++) { out += chars.charAt(Math.floor(Math.random() * chars.length)); }
   return out;
 }
-
 /* ---------- Export ---------- */
 async function exportFile(){
   const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5MB
