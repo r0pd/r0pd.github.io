@@ -351,8 +351,9 @@ function createNew(){
 
 function genCode(){
   const chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  let out = new Date().getFullYear().toString();
-  for(let i=0;i<4;i++) out += chars.charAt(Math.floor(Math.random()*chars.length));
+  let out = "";
+  for(let i=0; i<8; i++) {
+    out += chars.charAt(Math.floor(Math.random() * chars.length));}
   return out;
 }
 
