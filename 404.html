@@ -1,29 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Redirect...</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+</head>
 <body>
-<script>
-const MAX_PARTS = 100; // Số file tối đa cần thử
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAIGu_5QNMvzrObPNxHdG9kybBQtAddGsw",
+  authDomain: "linkrutgon-a69c8.firebaseapp.com",
+  projectId: "linkrutgon-a69c8",
+  storageBucket: "linkrutgon-a69c8.firebasestorage.app",
+  messagingSenderId: "373927357726",
+  appId: "1:373927357726:web:2a155c5ca9ee7066a62d0f",
+  measurementId: "G-CFQC07GBVE"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 const code = window.location.pathname.substring(1);
 
 async function findAndRedirect() {
-  for (let i = 1; i <= MAX_PARTS; i++) {
-    try {
-      const resp = await fetch(`/data/data_part${i}.json`);
-      if (!resp.ok) continue;
-
-      const links = await resp.json();
-      const match = links.find(l => l.short === code);
-
-      if (match) {
-        window.location.href = match.original;
-        return;
-      }
-    } catch (e) {
-      continue;
+  try {
+    if (!code) {
+      document.body.innerHTML = "<h1>404 - Link not found</h1>";
+      return;
     }
+    const docSnap = await getDoc(doc(db, "links", code));
+    if (docSnap.exists()) {
+      const original = docSnap.data().original || "/";
+      window.location.href = original;
+    } else {
+      document.body.innerHTML = "<h1>404 - Link not found</h1>";
+    }
+  } catch (err) {
+    console.error(err);
+    document.body.innerHTML = "<h1>404 - Lỗi kết nối Firebase</h1>";
   }
-
-  document.body.innerHTML = "<h1>404 - Link not found</h1>";
 }
 
 findAndRedirect();
 </script>
 </body>
+</html>

@@ -54,6 +54,9 @@ tbody tr:hover{background:rgba(255,255,255,0.01)}
 .close-btn{background:transparent;border:none;color:#ccc;font-size:18px;cursor:pointer}
 #importedFilesList{color:var(--muted);font-size:13px;margin-top:8px}
 #deleteCandidates{white-space:pre-wrap;color:#ffd6d6;margin-top:8px}
+.login-bar{display:flex;gap:8px;align-items:center;margin-top:8px}
+.login-bar input{padding:6px;border-radius:6px;background:var(--panel);border:1px solid rgba(255,255,255,0.03);color:#eaf2ff}
+.login-status{color:var(--muted);font-size:13px;margin-left:8px}
 </style>
 </head>
 <body>
@@ -63,7 +66,17 @@ tbody tr:hover{background:rgba(255,255,255,0.01)}
       <div><h1>Link Rút Gọn (Phân mảnh dữ liệu)</h1></div>
     </header>
     <span id="fileName">Chưa có tệp</span>
-    <div class="top-row">
+
+    <!-- ADMIN LOGIN (Email/Password) - cần để có quyền ghi theo Firestore rules -->
+    <div class="login-bar" style="margin-top:10px">
+      <input id="adminEmail" placeholder="Admin email" />
+      <input id="adminPass" type="password" placeholder="Mật khẩu" />
+      <button class="btn" id="loginBtn">Đăng nhập</button>
+      <button class="btn ghost" id="logoutBtn" style="display:none">Đăng xuất</button>
+      <span id="loginInfo" class="login-status">Chưa đăng nhập</span>
+    </div>
+
+    <div class="top-row" style="margin-top:8px">
       <div class="controls">
         <button class="btn warn" id="showDataBtn"><i class="fa fa-database"></i>&nbsp; Dữ liệu</button>
         <label class="file-label" for="importFile"><i class="fa fa-file-import"></i>&nbsp; Tệp (.js)</label>
@@ -73,7 +86,6 @@ tbody tr:hover{background:rgba(255,255,255,0.01)}
         <label class="file-label" for="importFolder"><i class="fa fa-folder-open"></i>&nbsp; Thư mục</label>
         <input type="file" id="importFolder" webkitdirectory directory multiple style="display:none">
         <button class="btn" id="exportBtn"><i class="fa fa-file-export"></i>&nbsp; Xuất file</button>
-        
       </div>
     </div>
 
@@ -117,7 +129,7 @@ tbody tr:hover{background:rgba(255,255,255,0.01)}
       </div>
       <textarea id="dataTextarea" class="data-textarea"></textarea>
       <div style="margin-top:6px; text-align:left; color:var(--muted)">
-        <small>Gợi ý: bạn có thể chỉnh JSON thủ công rồi Lưu thay đổi.</small>
+        <small>Gợi ý: bạn có thể chỉnh JSON thủ công rồi Lưu thay đổi (sẽ ghi vào Firestore).</small>
       </div>
       <div style="margin-top:6px; text-align:right;">
         <button id="saveDataBtn" class="btn warn"><i class="fa fa-save"></i> Lưu thay đổi</button>
@@ -135,13 +147,37 @@ tbody tr:hover{background:rgba(255,255,255,0.01)}
     </div>
   </div>
 
-<script>
-let data = [];
+<script type="module">
+/* Firebase + Firestore integration while keeping full UI features */
+/* Imports */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
+/* ---------- CONFIG ---------- */
+const firebaseConfig = {
+  apiKey: "AIzaSyAIGu_5QNMvzrObPNxHdG9kybBQtAddGsw",
+  authDomain: "linkrutgon-a69c8.firebaseapp.com",
+  projectId: "linkrutgon-a69c8",
+  storageBucket: "linkrutgon-a69c8.firebasestorage.app",
+  messagingSenderId: "373927357726",
+  appId: "1:373927357726:web:2a155c5ca9ee7066a62d0f",
+  measurementId: "G-CFQC07GBVE"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth();
+
+/* ---------- State ---------- */
+let data = [];               // local array of { short, original }
 const PER_PAGE = 10;
 let page = 1;
-const MAX_FILE_BYTES = 300 * 1024; // 300KB per file
-let importedFileNames = []; // track imported file names (for delete suggestions)
+let importedFileNames = [];
+let pendingDeleteIndex = null;
+let currentUser = null;
 
+/* ---------- UI helpers (kept from original) ---------- */
 function copyWithIcon(text, btnEl) {
   navigator.clipboard.writeText(text).then(()=>{ const icon = btnEl.querySelector('i'); const oldClass = icon.className; icon.className = 'fa fa-check'; setTimeout(()=>{ icon.className = oldClass; }, 1200); }).catch(()=>{});
 }
@@ -230,6 +266,7 @@ function render(){
   document.getElementById('dataTextarea').value = JSON.stringify(data, null, 2);
 }
 
+/* ---------- Edit / create UI logic (kept) ---------- */
 function startEdit(i, rowEl){
   const item = data[i];
   const tdShort = document.createElement('td');
@@ -253,7 +290,37 @@ function startEdit(i, rowEl){
   saveBtn.className = 'action-btn action-save';
   saveBtn.title = 'Lưu';
   saveBtn.innerHTML = '<i class="fa fa-check"></i>';
-  saveBtn.onclick = ()=>{ const ns = shortInput.value.trim(); const no = origInput.value.trim(); if(!ns || !no) return; data[i].short = ns; data[i].original = no; saveState(); render(); };
+  saveBtn.onclick = async ()=> {
+    const ns = shortInput.value.trim();
+    const no = origInput.value.trim();
+    if(!ns || !no) return;
+    const oldShort = item.short;
+
+    try {
+      // If short changed: create new doc with new ID then delete old
+      if (ns !== oldShort) {
+        // prevent overwrite existing doc accidentally
+        const existing = await getDoc(doc(db, "links", ns));
+        if (existing.exists()) {
+          return alert("Mã rút gọn mới đã tồn tại. Chọn mã khác.");
+        }
+        await setDoc(doc(db, "links", ns), { original: no });
+        await deleteDoc(doc(db, "links", oldShort));
+        // update local data
+        data[i] = { short: ns, original: no };
+      } else {
+        // short unchanged -> update original
+        await updateDoc(doc(db, "links", ns), { original: no });
+        data[i].original = no;
+      }
+      render();
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi khi lưu: " + err.message);
+      // revert UI
+      render();
+    }
+  };
 
   const cancelBtn = document.createElement('button');
   cancelBtn.className = 'action-btn action-del';
@@ -270,16 +337,28 @@ function startEdit(i, rowEl){
   rowEl.appendChild(tdAct);
 }
 
-function createNew(){
+async function createNew(){
+  if (!currentUser) return alert("Vui lòng đăng nhập admin để tạo link.");
   const orig = document.getElementById('originalInput').value.trim();
   if(!orig) return;
   let code = genCode();
-  while(data.some(x=>x.short===code)) code = genCode();
-  data.push({ short: code, original: orig });
-  saveState();
-  document.getElementById('originalInput').value = '';
-  page = Math.ceil(data.length / PER_PAGE);
-  render();
+  // ensure unique in firestore
+  let tries = 0;
+  while (tries < 10) {
+    const snap = await getDoc(doc(db, "links", code));
+    if (!snap.exists()) break;
+    code = genCode(); tries++;
+  }
+  try {
+    await setDoc(doc(db, "links", code), { original: orig });
+    data.push({ short: code, original: orig });
+    document.getElementById('originalInput').value = '';
+    page = Math.ceil(data.length / PER_PAGE);
+    render();
+  } catch (err) {
+    console.error(err);
+    alert("Lỗi tạo link: " + err.message);
+  }
 }
 
 function genCode(){
@@ -289,14 +368,12 @@ function genCode(){
   return out;
 }
 
-function saveState(){ window._links_working = data; }
-
-// EXPORT: MAX_FILE_BYTES
+/* ---------- Export (giữ nguyên logic gốc) ---------- */
 async function exportFile(){
   const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5MB
-  if (!data.length) { 
-    alert('Không có dữ liệu để xuất'); 
-    return; 
+  if (!data.length) {
+    alert('Không có dữ liệu để xuất');
+    return;
   }
 
   const filesToDownload = [];
@@ -346,21 +423,27 @@ async function exportFile(){
   alert('Xuất xong. Tải các file trong thư mục data/ rồi upload lên GitHub (ghi đè nếu cần).');
 }
 
-// IMPORT legacy links.js
+/* ---------- IMPORT legacy links.js (và import jsons) ---------- */
 function importFileJs(file){
   if(!file) return;
   const reader = new FileReader();
-  reader.onload = (ev)=>{
+  reader.onload = async (ev)=>{
     const txt = ev.target.result;
     try {
       const fn = new Function(txt + '; return links;');
       const imported = fn();
       if(Array.isArray(imported)){
-        const map = new Map(data.map(d=>[d.short,d]));
-        imported.forEach(it=> map.set(String(it.short), {short:String(it.short), original:String(it.original)}));
-        data = Array.from(map.values());
-        saveState(); page=1; render();
+        // write each link to Firestore (id = short)
+        const batch = writeBatch(db);
+        imported.forEach(it=>{
+          if(!it || !it.short) return;
+          const id = String(it.short);
+          const original = String(it.original);
+          batch.set(doc(db, "links", id), { original });
+        });
+        await batch.commit();
         document.getElementById('fileName').textContent = file.name;
+        await loadLinks();
       } else alert('Không tìm thấy mảng `links` trong file.');
     } catch (err){
       alert('Lỗi khi đọc file: ' + err.message);
@@ -369,7 +452,6 @@ function importFileJs(file){
   reader.readAsText(file);
 }
 
-// IMPORT multiple selected json files (arbitrary selection)
 function importSelectedFiles(files){
   if(!files || !files.length) return;
   importedFileNames = importedFileNames.concat(Array.from(files).map(f=>f.name));
@@ -377,16 +459,18 @@ function importSelectedFiles(files){
   for(const f of files){
     readers.push(new Promise((res)=>{
       const r = new FileReader();
-      r.onload = (ev)=>{
+      r.onload = async (ev)=>{
         try{
           const arr = JSON.parse(ev.target.result);
           if(Array.isArray(arr)){
+            const batch = writeBatch(db);
             arr.forEach(it=>{
               if(!it || !it.short) return;
-              const idx = data.findIndex(d=>d.short === String(it.short));
-              const obj = { short: String(it.short), original: String(it.original) };
-              if(idx>=0) data[idx] = obj; else data.push(obj);
+              const id = String(it.short);
+              const original = String(it.original);
+              batch.set(doc(db, "links", id), { original });
             });
+            await batch.commit();
           }
         }catch(e){}
         res();
@@ -394,53 +478,89 @@ function importSelectedFiles(files){
       r.readAsText(f);
     }));
   }
-  Promise.all(readers).then(()=>{ saveState(); page=1; render(); document.getElementById('fileName').textContent = `Đã nhập ${files.length} file`; document.getElementById('importedFilesList').textContent = 'Các file đã nhập: ' + importedFileNames.join(', '); });
+  Promise.all(readers).then(()=>{ page=1; loadLinks(); document.getElementById('fileName').textContent = `Đã nhập ${files.length} file`; document.getElementById('importedFilesList').textContent = 'Các file đã nhập: ' + importedFileNames.join(', '); });
 }
 
-// IMPORT folder (webkitdirectory) - read all .json files
 function importFolderFiles(fileList){
   const jsonFiles = Array.from(fileList).filter(f=>f.name.endsWith('.json'));
   importSelectedFiles(jsonFiles);
 }
 
-// show data popup
+/* ---------- Data popup save => overwrite collection ---------- */
+document.getElementById('saveDataBtn').onclick = async function(){
+  if (!currentUser) return alert("Vui lòng đăng nhập admin trước khi lưu dữ liệu!");
+  try{
+    const arr = JSON.parse(document.getElementById('dataTextarea').value);
+    if(!Array.isArray(arr)) return alert('Dữ liệu không hợp lệ');
+
+    // build map of new items
+    const newMap = new Map();
+    arr.forEach(it => {
+      if(it && it.short) newMap.set(String(it.short), String(it.original||""));
+    });
+
+    // fetch existing doc ids
+    const snap = await getDocs(collection(db, "links"));
+    const existingIds = new Set();
+    snap.forEach(d => existingIds.add(d.id));
+
+    const batch = writeBatch(db);
+
+    // set/update docs present in newMap
+    for (const [short, original] of newMap.entries()) {
+      batch.set(doc(db, "links", short), { original });
+      existingIds.delete(short); // mark as handled
+    }
+
+    // delete remaining existingIds that are not in newMap
+    for (const id of existingIds) {
+      batch.delete(doc(db, "links", id));
+    }
+
+    await batch.commit();
+    await loadLinks();
+    hideDataPopup();
+    alert("Lưu dữ liệu vào Firestore thành công.");
+  } catch(e){
+    alert("Lỗi khi lưu dữ liệu: " + e.message);
+  }
+};
+
+/* ---------- Confirm delete handlers (overwrite to call Firestore) ---------- */
+function showConfirm(index) {
+  pendingDeleteIndex = index;
+  const popup = document.getElementById('confirmPopup');
+  popup.style.display = 'flex';
+  requestAnimationFrame(()=>{popup.classList.add('show');document.getElementById('confirmYes').focus();});
+}
+function hideConfirm(){
+  const popup=document.getElementById('confirmPopup');
+  popup.classList.remove('show');
+  setTimeout(()=>popup.style.display='none',250);
+  pendingDeleteIndex=null;
+}
+document.getElementById('confirmYes').onclick = async ()=> {
+  if(pendingDeleteIndex !== null){
+    const item = data[pendingDeleteIndex];
+    try {
+      await deleteDoc(doc(db, "links", item.short));
+      data.splice(pendingDeleteIndex,1);
+      render();
+    } catch(e){ alert("Lỗi xóa: " + e.message); }
+  }
+  hideConfirm();
+};
+document.getElementById('confirmNo').onclick = hideConfirm;
+
+/* ---------- Popup show/hide and copy ---------- */
 function showDataPopup(){ const popup=document.getElementById('dataPopup'); popup.style.display='flex'; requestAnimationFrame(()=>popup.classList.add('show')); }
 function hideDataPopup(){ const popup=document.getElementById('dataPopup'); popup.classList.remove('show'); setTimeout(()=>popup.style.display='none',250); }
 
 document.getElementById('copyDataBtn').onclick = function(){ copyWithIcon(document.getElementById('dataTextarea').value, this); };
-document.getElementById('saveDataBtn').onclick = function(){ try{ const arr = JSON.parse(document.getElementById('dataTextarea').value); if(Array.isArray(arr)){ const map=new Map(); data.forEach(d=>map.set(d.short,d)); arr.forEach(it=>map.set(String(it.short),{short:String(it.short),original:String(it.original)})); data=Array.from(map.values()); saveState(); render(); hideDataPopup(); } else alert('Dữ liệu không hợp lệ'); }catch(e){ alert('JSON không hợp lệ: '+e.message);} };
-
 document.getElementById('showDataBtn').onclick = showDataPopup;
 document.getElementById('closeDataPopup').onclick = hideDataPopup;
 
-let pendingDeleteIndex = null;
-function showConfirm(index) { pendingDeleteIndex = index; const popup = document.getElementById('confirmPopup'); popup.style.display='flex'; requestAnimationFrame(()=>{popup.classList.add('show');document.getElementById('confirmYes').focus();}); document.addEventListener('keydown', handleConfirmKeys); }
-function hideConfirm(){ const popup=document.getElementById('confirmPopup'); popup.classList.remove('show'); setTimeout(()=>popup.style.display='none',250); pendingDeleteIndex=null; document.removeEventListener('keydown', handleConfirmKeys); }
-function handleConfirmKeys(e) {
-    if (pendingDeleteIndex !== null) {
-        const yesBtn = document.getElementById('confirmYes');
-        const noBtn = document.getElementById('confirmNo');
-
-        if (e.key === 'Enter') {
-            yesBtn.click();
-        } else if (e.key === 'Escape') {
-            noBtn.click();
-        } else if (e.key === 'Tab') {
-            e.preventDefault(); // chặn Tab mặc định
-            if (document.activeElement === yesBtn) {
-                noBtn.focus();
-            } else {
-                yesBtn.focus();
-            }
-        }
-    }
-}
-
-document.getElementById('confirmYes').onclick = ()=>{ if(pendingDeleteIndex !== null){ data.splice(pendingDeleteIndex,1); saveState(); render(); } hideConfirm(); };
-document.getElementById('confirmNo').onclick = hideConfirm;
-
-document.addEventListener('keydown',(e)=>{ if(e.key==='Escape'){hideDataPopup(); } });
-
+/* ---------- Search / UI wiring ---------- */
 document.getElementById('createBtn').onclick = createNew;
 document.getElementById('searchInput').oninput = ()=>{ page=1; render(); };
 document.getElementById('exportBtn').onclick = exportFile;
@@ -448,9 +568,68 @@ document.getElementById('importFile').onchange = e=>{ const f=e.target.files[0];
 document.getElementById('importFiles').onchange = e=>{ importSelectedFiles(e.target.files); };
 document.getElementById('importFolder').onchange = e=>{ importFolderFiles(e.target.files); };
 
-// initial state: empty data (require import or manual add)
-data = [];
-render();
+/* ---------- LOAD from Firestore ---------- */
+async function loadLinks(){
+  try {
+    const snapshot = await getDocs(collection(db, "links"));
+    data = [];
+    snapshot.forEach(docSnap => {
+      const obj = docSnap.data();
+      data.push({ short: docSnap.id, original: obj.original||"" });
+    });
+    // sort by short (optional) to keep consistent ordering
+    data.sort((a,b)=>a.short.localeCompare(b.short));
+    page = 1;
+    render();
+  } catch(err){
+    console.error(err);
+    alert("Lỗi khi load dữ liệu từ Firestore: " + err.message);
+  }
+}
+
+/* ---------- AUTH ---------- */
+document.getElementById('loginBtn').onclick = async () => {
+  const email = document.getElementById('adminEmail').value.trim();
+  const pass = document.getElementById('adminPass').value.trim();
+  if (!email || !pass) return alert("Nhập email và mật khẩu admin.");
+  try {
+    const cred = await signInWithEmailAndPassword(auth, email, pass);
+    currentUser = cred.user;
+    document.getElementById('loginInfo').textContent = `Đã đăng nhập: ${currentUser.email}`;
+    document.getElementById('loginBtn').style.display = 'none';
+    document.getElementById('logoutBtn').style.display = 'inline-block';
+    // reload links after login (if necessary)
+    await loadLinks();
+  } catch(err) {
+    alert("Đăng nhập thất bại: " + err.message);
+  }
+};
+
+document.getElementById('logoutBtn').onclick = async () => {
+  await signOut(auth);
+  currentUser = null;
+  document.getElementById('loginInfo').textContent = 'Chưa đăng nhập';
+  document.getElementById('loginBtn').style.display = 'inline-block';
+  document.getElementById('logoutBtn').style.display = 'none';
+};
+
+/* Keep UI state if auth changes elsewhere */
+onAuthStateChanged(auth, user => {
+  currentUser = user;
+  if (user) {
+    document.getElementById('loginInfo').textContent = `Đã đăng nhập: ${user.email}`;
+    document.getElementById('loginBtn').style.display = 'none';
+    document.getElementById('logoutBtn').style.display = 'inline-block';
+  } else {
+    document.getElementById('loginInfo').textContent = 'Chưa đăng nhập';
+    document.getElementById('loginBtn').style.display = 'inline-block';
+    document.getElementById('logoutBtn').style.display = 'none';
+  }
+});
+
+/* ---------- Initial load ---------- */
+loadLinks();
+
 </script>
 </body>
 </html>
