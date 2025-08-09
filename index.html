@@ -117,7 +117,7 @@ tbody tr:hover{background:rgba(255,255,255,0.01)}
       <div><br></div>
         <div class="search-wrap">
           <input id="searchInput" class="search-input" placeholder="Tìm kiếm mã hoặc link..." />
-        </div>  
+        </div>
       <table>
         <thead>
           <tr>
@@ -539,6 +539,16 @@ document.getElementById('searchInput').oninput = ()=>{ page=1; render(); };
 document.getElementById('exportBtn').onclick = exportFile;
 document.getElementById('importFiles').onchange = e=>{ importSelectedFiles(e.target.files); };
 document.getElementById('importFolder').onchange = e=>{ importFolderFiles(e.target.files); };
+
+const handleLoginOnEnter = (event) => {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        document.getElementById('loginBtn').click();
+    }
+};
+document.getElementById('adminEmail').addEventListener('keyup', handleLoginOnEnter);
+document.getElementById('adminPass').addEventListener('keyup', handleLoginOnEnter);
+
 
 /* ---------- LOAD from Firestore ---------- */
 async function loadLinks(){

@@ -4,8 +4,28 @@
 <meta charset="utf-8">
 <title>Redirect...</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  :root {
+    --bg: #0f1720;
+    --accent-2: #66b3ff;
+  }
+  body {
+    background-color: var(--bg);
+    color: var(--accent-2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    font-family: Inter, Arial, Helvetica, sans-serif;
+  }
+  h1 {
+    font-size: 22px;
+  }
+</style>
 </head>
 <body>
+<h1>Đang chuyển hướng...</h1>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
