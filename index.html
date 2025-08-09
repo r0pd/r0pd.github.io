@@ -32,7 +32,6 @@
   .btn.danger{background:#d9534f}
   .input, input[type="text"], textarea{background:var(--panel);border:1px solid rgba(255,255,255,0.03);padding:10px;border-radius:8px;color:#eaf2ff;font-family:inherit}
 
-  /* ---------- NEW: create-row (create area left, search right on same row) ---------- */
   .create-row {
     display: flex;
     justify-content: space-between;
@@ -45,18 +44,18 @@
     display: flex;
     gap: 8px;
     align-items: center;
-    flex: 1; /* allow to grow */
-    min-width: 0; /* important so flex child can shrink */
+    flex: 1;
+    min-width: 0;
   }
   .create-area .input {
     flex: 1;
-    min-width: 0; /* allow shrinking on small screens */
+    min-width: 0;
     max-width: 350px;
   }
   .search-wrap {
     display: flex;
     justify-content: flex-end;
-    flex: 0 0 260px; /* fixed-ish area on right */
+    flex: 0 0 260px;
   }
   .search-input {
     width: 100%;
@@ -67,7 +66,6 @@
     color: #eaf2ff;
     box-sizing: border-box;
   }
-  /* ------------------------------------------------------------------------------- */
 
   table{width:100%;border-collapse:collapse;margin-top:14px;border-radius:8px;overflow:hidden;background:transparent}
   thead th{background:rgba(20,28,40,0.6);text-align:left;padding:12px;font-weight:600;color:var(--accent-2);font-size:13px}
@@ -84,7 +82,6 @@
   .pg-btn{background:rgba(255,255,255,0.03);border:none;color:var(--muted);padding:6px 10px;border-radius:8px;cursor:pointer}
   .pg-btn.active{background:var(--accent);color:#fff}
   @media (max-width:820px){
-    /* On smaller screens: stack vertically (keeps usability) */
     .create-row { flex-direction: column; align-items: stretch; gap: 8px; }
     .create-area { flex-direction: column; align-items: stretch; }
     .create-area .input { width: 100%; }
@@ -96,7 +93,6 @@
     td{font-size:13px;padding:8px}
     .logo{width:36px;height:36px}
   }
-  /* Popup xác nhận */
   .popup-overlay {
     display: none;
     position: fixed;
@@ -121,7 +117,6 @@
     from { transform: scale(0.95); opacity: 0; }
     to { transform: scale(1); opacity: 1; }
   }
-  /* Popup dữ liệu */
   .data-popup { width: 600px; max-width: 95%; }
   .data-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
   .data-textarea {width: 96%; height: 300px; margin: 10px 0px; resize: vertical; }
@@ -145,10 +140,8 @@
         <button class="btn" id="exportBtn"><i class="fa fa-file-export"></i>&nbsp; Xuất file</button>
         <button class="btn warn" id="showDataBtn"><i class="fa fa-database"></i>&nbsp; Dữ liệu (links.js)</button>
       </div>
-      <!-- right side of top-row left empty so controls stay left -->
     </div>
 
-    <!-- NEW: create-row contains create-area (left) and search-wrap (right) on one row -->
     <div class="create-row">
       <div class="create-area">
         <input id="originalInput" class="input" placeholder="Nhập link gốc (vd: https://example.com)" />
@@ -173,7 +166,6 @@
     <div class="pagination" id="pagination"></div>
   </div>
 
-  <!-- Popup dữ liệu -->
   <div id="dataPopup" class="popup-overlay">
     <div class="popup-box data-popup">
       <div class="data-header">
@@ -190,7 +182,6 @@
     </div>
   </div>
 
-  <!-- Popup xác nhận xóa -->
   <div id="confirmPopup" class="popup-overlay">
     <div class="popup-box" style="max-width:320px;">
       <div style="margin-bottom:14px;font-size:15px;">Bạn có chắc muốn xóa mục này?</div>
@@ -206,7 +197,6 @@ let data = [];
 const PER_PAGE = 10;
 let page = 1;
 
-/* Copy với icon đổi */
 function copyWithIcon(text, btnEl) {
   navigator.clipboard.writeText(text).then(()=>{
     const icon = btnEl.querySelector('i');
@@ -237,9 +227,13 @@ function render(){
     copyBtnShort.innerHTML = '<i class="fa fa-copy"></i>';
     copyBtnShort.onclick = ()=> copyWithIcon(location.origin + '/' + item.short, copyBtnShort);
     tdShort.appendChild(copyBtnShort);
-    const shortText = document.createElement('span');
-    shortText.textContent = " " + item.short;
-    tdShort.appendChild(shortText);
+    const shortLink = document.createElement('a');
+    shortLink.href = location.origin + '/' + item.short;
+    shortLink.target = '_blank';
+    shortLink.style.color = '#dfefff';
+    shortLink.style.textDecoration = 'none';
+    shortLink.textContent = " " + item.short;
+    tdShort.appendChild(shortLink);
 
     const tdOrig = document.createElement('td');
     const copyBtnOrig = document.createElement('button');
@@ -292,7 +286,6 @@ function render(){
     pgWrap.appendChild(b);
   }
 
-  // Cập nhật popup dữ liệu
   document.getElementById('dataTextarea').value = JSON.stringify(data, null, 2);
 }
 
@@ -415,7 +408,6 @@ function tryLoadRemote(){
   }).catch(()=>{});
 }
 
-/* Popup xác nhận xóa */
 let pendingDeleteIndex = null;
 function showConfirm(index) {
   pendingDeleteIndex = index;
@@ -439,7 +431,6 @@ document.getElementById('confirmYes').onclick = () => {
 };
 document.getElementById('confirmNo').onclick = hideConfirm;
 
-/* Popup dữ liệu */
 function showDataPopup(){
   const popup = document.getElementById('dataPopup');
   popup.style.display = 'flex';
@@ -468,7 +459,6 @@ document.getElementById('saveDataBtn').onclick = function(){
   } catch(e){ alert('JSON không hợp lệ: ' + e.message); }
 };
 
-/* Đóng popup bằng Esc */
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     hideConfirm();

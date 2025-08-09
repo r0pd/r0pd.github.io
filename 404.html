@@ -12,7 +12,6 @@
     document.body.innerHTML = "<h1 style='color:white;background:black;text-align:center;padding:20px;margin:0'>"+msg+"</h1>";
   }
 
-  // Lấy đoạn cuối của path (ví dụ: /repo/abcd -> 'abcd'; /abcd -> 'abcd')
   const rawPath = decodeURIComponent(location.pathname || '');
   const parts = rawPath.split('/').filter(Boolean);
   const code = parts.length ? parts[parts.length - 1] : '';
@@ -25,19 +24,17 @@
   // Tạo danh sách URL khả dĩ cho links.js (thích ứng với user-page và project-page)
   const basePath = rawPath.replace(/\/[^\/]*$/, '') || '';
   const candidates = [
-    location.origin + basePath + '/links.js', // ví dụ: https://user.github.io/repo/links.js
-    location.origin + '/links.js',            // fallback: root
-    'links.js'                                // relative fallback
+    location.origin + basePath + '/links.js',
+    location.origin + '/links.js', 
+    'links.js' 
   ];
 
   function tryEvalAndRedirect(txt){
     try {
-      // Trả về mảng links hoặc shortLinks nếu có
       const fn = new Function(txt + '; return (typeof links !== "undefined") ? links : (typeof shortLinks !== "undefined" ? shortLinks : null);');
       const arr = fn();
       if(!Array.isArray(arr)) throw new Error('Không tìm thấy mảng links/shortLinks');
 
-      // Hỗ trợ object có { short, original } hoặc { code, url }
       const found = arr.find(l => String(l.short || l.code || '').trim() === code);
       if(found){
         const dest = found.original || found.url || found.link;
@@ -61,7 +58,7 @@
         const txt = await resp.text();
         if(tryEvalAndRedirect(txt)) return;
       } catch(e){
-        // console.warn('fetch fail for', url, e);
+    
       }
     }
     show('Link không tồn tại hoặc không thể tải dữ liệu links.js');
