@@ -20,7 +20,7 @@ const auth = getAuth();
 
 /* ---------- App State ---------- */
 let data = []; // Sẽ chỉ chứa dữ liệu của trang hiện tại
-const PER_PAGE = 5;
+const PER_PAGE = 3;
 let page = 1;
 let importedFileNames = [];
 let pendingDeleteIndex = null;
