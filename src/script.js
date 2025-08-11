@@ -1,9 +1,7 @@
-/* Firebase + Firestore integration */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, writeBatch, query, orderBy, limit, startAfter, getCountFromServer, documentId, where } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
- 
-/* ---------- CONFIG ---------- */
+
 const firebaseConfig = {
   apiKey: "AIzaSyAIGu_5QNMvzrObPNxHdG9kybBQtAddGsw",
   authDomain: "linkrutgon-a69c8.firebaseapp.com",
@@ -19,16 +17,16 @@ const db = getFirestore(app);
 const auth = getAuth();
 
 /* ---------- App State ---------- */
-let data = []; // chỉ chứa dữ liệu của trang hiện tại
+let data = [];
 const PER_PAGE = 5;
 let page = 1;
 let importedFileNames = [];
 let pendingDeleteIndex = null;
 let currentUser = null;
-let totalLinks = 0; // lưu tổng số link
-let pageCursors = { 1: null }; // lưu con trỏ cho mỗi trang
+let totalLinks = 0;
+let pageCursors = { 1: null };
 let isLinkListVisible = false;
-let hasDataLoaded = false; // Theo dõi xem dữ liệu đã tải lần nào chưa
+let hasDataLoaded = false;
 
 /* ---------- DOM Elements ---------- */
 const loginContainer = document.getElementById('login-container');
@@ -333,13 +331,10 @@ async function createNew(){
     document.getElementById('titleInput').value = '';
     page = 1; 
     render();
-
-    // Khi tạo link thành công, tự động hiển thị danh sách
     if (!isLinkListVisible) {
       isLinkListVisible = true;
       updateLinkListVisibility();
     }
-
   } catch (err) {
     console.error(err);
     alert("Lỗi tạo link: " + err.message);
@@ -347,30 +342,24 @@ async function createNew(){
   }
 }
 
-// Tải dữ liệu ban đầu và hiển thị danh sách
 async function fetchInitialDataAndShow() {
-  // Hiển thị trạng thái đang tải trên nút
   toggleListBtn.disabled = true;
   toggleListBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i>&nbsp; Đang tải...';
 
   try {
     const countSnapshot = await getCountFromServer(collection(db, "links"));
     totalLinks = countSnapshot.data().count;
-    
-    await loadLinks(1); // Tải dữ liệu cho trang đầu tiên
-
-    hasDataLoaded = true; // Đánh dấu là đã tải dữ liệu
-    isLinkListVisible = true; // Đặt trạng thái là cần hiển thị
-    updateLinkListVisibility(); // Cập nhật giao diện (hiện list và đổi lại text cho nút)
-
+    await loadLinks(1);
+    hasDataLoaded = true;
+    isLinkListVisible = true;
+    updateLinkListVisibility();
   } catch (err) {
     console.error("Lỗi tải dữ liệu lần đầu:", err);
     alert("Không thể tải dữ liệu. Vui lòng thử lại.");
-    // Nếu lỗi, trả lại trạng thái ban đầu cho nút
     isLinkListVisible = false;
     updateLinkListVisibility();
   } finally {
-    toggleListBtn.disabled = false; // Bật lại nút dù thành công hay thất bại
+    toggleListBtn.disabled = false;
   }
 }
 
@@ -380,6 +369,7 @@ function genCode(length = 8){
   for(let i=0; i<length; i++) { out += chars.charAt(Math.floor(Math.random() * chars.length)); }
   return out;
 }
+
 /* ---------- Export ---------- */
 async function exportFile(){
   const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5MB
@@ -537,16 +527,13 @@ document.getElementById('closeDataPopup').onclick = hideDataPopup;
 
 /* ---------- UI Event Listeners ---------- */
 toggleListBtn.onclick = async () => {
-  // Nếu dữ liệu chưa từng được tải, hãy gọi hàm để tải.
   if (!hasDataLoaded) {
     await fetchInitialDataAndShow();
   } else {
-    // Nếu dữ liệu đã có sẵn, chỉ cần ẩn/hiện như bình thường.
     isLinkListVisible = !isLinkListVisible;
     updateLinkListVisibility();
   }
 };
-
 document.getElementById('createBtn').onclick = createNew;
 document.getElementById('originalInput').addEventListener('keyup', (event) => {
     if (event.key === "Enter") {
@@ -554,8 +541,6 @@ document.getElementById('originalInput').addEventListener('keyup', (event) => {
     }
 });
 document.getElementById('searchInput').oninput = () => {
-  // Khi người dùng gõ tìm kiếm, luôn bắt đầu từ trang 1
-  // và gọi loadLinks với nội dung ô tìm kiếm
   loadLinks(1, document.getElementById('searchInput').value);
 };
 document.getElementById('exportBtn').onclick = exportFile;
@@ -570,14 +555,12 @@ const handleLoginOnEnter = (event) => {
 document.getElementById('adminEmail').addEventListener('keyup', handleLoginOnEnter);
 document.getElementById('adminPass').addEventListener('keyup', handleLoginOnEnter);
 
-
 async function loadLinks(targetPage = 1, searchQuery = '') {
   try {
     searchQuery = searchQuery.trim();
     const linksCollection = collection(db, "links");
 
-    // --- Cập nhật logic đếm tổng số ---
-    // Nếu có tìm kiếm, đếm các kết quả khớp. Nếu không, đếm tất cả.
+    // --- Logic đếm tổng số ---
     let countQuery;
     if (searchQuery) {
       countQuery = query(
@@ -592,10 +575,9 @@ async function loadLinks(targetPage = 1, searchQuery = '') {
     const countSnapshot = await getCountFromServer(countQuery);
     totalLinks = countSnapshot.data().count;
 
-    // --- Cập nhật logic truy vấn dữ liệu ---
+    // --- Logic truy vấn dữ liệu ---
     let linksQuery;
     if (searchQuery) {
-      // Query khi có tìm kiếm
       linksQuery = query(
         linksCollection,
         orderBy(documentId()),
@@ -604,7 +586,6 @@ async function loadLinks(targetPage = 1, searchQuery = '') {
         limit(PER_PAGE)
       );
     } else {
-      // Query khi không có tìm kiếm (phân trang bình thường)
       linksQuery = query(
         linksCollection,
         orderBy(documentId()),
@@ -612,9 +593,8 @@ async function loadLinks(targetPage = 1, searchQuery = '') {
       );
     }
 
-    // Logic phân trang với startAfter giữ nguyên cho cả 2 trường hợp
+    // Logic phân trang với startAfter
     if (targetPage > 1 && pageCursors[targetPage]) {
-      // Phải xây dựng lại query với startAfter
       if (searchQuery) {
           linksQuery = query(linksCollection, orderBy(documentId()), where(documentId(), '>=', searchQuery), where(documentId(), '<=', searchQuery + '\uf8ff'), startAfter(pageCursors[targetPage]), limit(PER_PAGE));
       } else {
@@ -623,7 +603,6 @@ async function loadLinks(targetPage = 1, searchQuery = '') {
     }
 
     const documentSnapshots = await getDocs(linksQuery);
-
     data = []; 
     documentSnapshots.forEach(docSnap => {
       const obj = docSnap.data();
@@ -640,7 +619,6 @@ async function loadLinks(targetPage = 1, searchQuery = '') {
       pageCursors[targetPage + 1] = lastVisible;
     }
 
-    // Reset con trỏ và trang khi thực hiện một tìm kiếm mới
     if(searchQuery && targetPage === 1){
         pageCursors = { 1: null };
     }
@@ -702,23 +680,13 @@ onAuthStateChanged(auth, async user => {
     document.getElementById('authStatus').textContent = `Đã đăng nhập: ${user.email}`;
     document.getElementById('domainPrefix').textContent = location.origin.replace(/https?:\/\//, '') + '/';
     loginErrorEl.textContent = '';
-    // Lấy tổng số link một lần để tính toán phân trang
-//DEL    const countSnapshot = await getCountFromServer(collection(db, "links"));
-//DEL    totalLinks = countSnapshot.data().count;
-    // Tải trang đầu tiên
-//DEL    loadLinks(1);
-
-    // Đặt lại trạng thái khi đăng nhập
     hasDataLoaded = false;
-    data = []; // Xóa dữ liệu cũ (nếu có từ phiên trước)
+    data = [];
     isLinkListVisible = false;
     updateLinkListVisibility();
-    render(); // Render bảng rỗng
-    
-    // Đảm bảo danh sách được ẩn khi người dùng mới đăng nhập
+    render();
     isLinkListVisible = false;
     updateLinkListVisibility();
-
   } else {
     loginContainer.style.display = 'flex';
     mainContainer.style.display = 'none';
