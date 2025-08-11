@@ -212,3 +212,12 @@ tbody tr:hover{background:rgba(255,255,255,0.01)}
 #deleteCandidates{white-space:pre-wrap;color:#ffd6d6;margin-top:8px}
 .auth-bar{display:flex;gap:12px;align-items:center;margin:12px 0;padding:8px;background:rgba(255,255,255,0.02);border-radius:8px;justify-content:space-between}
 .auth-status{color:var(--muted);font-size:16px}
+
+#link-list-container {
+    display: none;
+}
+#toggleListBtn {
+  display: block;
+  margin-top: 20px;
+  margin-bottom: 15px;
+}

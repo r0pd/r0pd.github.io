@@ -19,24 +19,38 @@ const db = getFirestore(app);
 const auth = getAuth();
 
 /* ---------- App State ---------- */
-let data = []; // Sẽ chỉ chứa dữ liệu của trang hiện tại
-const PER_PAGE = 3;
+let data = []; // chỉ chứa dữ liệu của trang hiện tại
+const PER_PAGE = 5;
 let page = 1;
 let importedFileNames = [];
 let pendingDeleteIndex = null;
 let currentUser = null;
-let totalLinks = 0; // Biến mới để lưu tổng số link
-let pageCursors = { 1: null }; // Biến mới để lưu con trỏ cho mỗi trang
+let totalLinks = 0; // lưu tổng số link
+let pageCursors = { 1: null }; // lưu con trỏ cho mỗi trang
+let isLinkListVisible = false;
+let hasDataLoaded = false; // Theo dõi xem dữ liệu đã tải lần nào chưa
 
 /* ---------- DOM Elements ---------- */
 const loginContainer = document.getElementById('login-container');
 const mainContainer = document.getElementById('main-container');
 const loginErrorEl = document.getElementById('loginError');
 const loaderContainer = document.getElementById('loader-container');
+const linkListContainer = document.getElementById('link-list-container');
+const toggleListBtn = document.getElementById('toggleListBtn');
 
 /* ---------- UI helpers ---------- */
 function copyWithIcon(text, btnEl) {
   navigator.clipboard.writeText(text).then(()=>{ const icon = btnEl.querySelector('i'); const oldClass = icon.className; icon.className = 'fa fa-check'; setTimeout(()=>{ icon.className = oldClass; }, 1200); }).catch(()=>{});
+}
+
+function updateLinkListVisibility() {
+  if (isLinkListVisible) {
+    linkListContainer.style.display = 'block';
+    toggleListBtn.innerHTML = '<i class="fa fa-list"></i>&nbsp; Ẩn Danh Sách';
+  } else {
+    linkListContainer.style.display = 'none';
+    toggleListBtn.innerHTML = '<i class="fa fa-list"></i>&nbsp; Hiện Danh Sách';
+  }
 }
 
 function render() {
@@ -47,7 +61,6 @@ function render() {
   const tbody = document.getElementById('tableBody');
   tbody.innerHTML = "";
 
-  // PHẦN BỊ THIẾU TRƯỚC ĐÂY GIỜ ĐÃ ĐƯỢC THÊM ĐẦY ĐỦ
   pageItems.forEach((item, idx) => {
     const realIndex = (page - 1) * PER_PAGE + idx;
     const tr = document.createElement('tr');
@@ -320,10 +333,44 @@ async function createNew(){
     document.getElementById('titleInput').value = '';
     page = 1; 
     render();
+
+    // Khi tạo link thành công, tự động hiển thị danh sách
+    if (!isLinkListVisible) {
+      isLinkListVisible = true;
+      updateLinkListVisibility();
+    }
+
   } catch (err) {
     console.error(err);
     alert("Lỗi tạo link: " + err.message);
     createBtn.disabled = false;
+  }
+}
+
+// Tải dữ liệu ban đầu và hiển thị danh sách
+async function fetchInitialDataAndShow() {
+  // Hiển thị trạng thái đang tải trên nút
+  toggleListBtn.disabled = true;
+  toggleListBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i>&nbsp; Đang tải...';
+
+  try {
+    const countSnapshot = await getCountFromServer(collection(db, "links"));
+    totalLinks = countSnapshot.data().count;
+    
+    await loadLinks(1); // Tải dữ liệu cho trang đầu tiên
+
+    hasDataLoaded = true; // Đánh dấu là đã tải dữ liệu
+    isLinkListVisible = true; // Đặt trạng thái là cần hiển thị
+    updateLinkListVisibility(); // Cập nhật giao diện (hiện list và đổi lại text cho nút)
+
+  } catch (err) {
+    console.error("Lỗi tải dữ liệu lần đầu:", err);
+    alert("Không thể tải dữ liệu. Vui lòng thử lại.");
+    // Nếu lỗi, trả lại trạng thái ban đầu cho nút
+    isLinkListVisible = false;
+    updateLinkListVisibility();
+  } finally {
+    toggleListBtn.disabled = false; // Bật lại nút dù thành công hay thất bại
   }
 }
 
@@ -454,7 +501,6 @@ document.getElementById('saveDataBtn').onclick = async function(){
   }
 };
 
-
 /* ---------- Confirm delete handlers ---------- */
 function showConfirm(index) {
   pendingDeleteIndex = index;
@@ -490,6 +536,17 @@ document.getElementById('showDataBtn').onclick = showDataPopup;
 document.getElementById('closeDataPopup').onclick = hideDataPopup;
 
 /* ---------- UI Event Listeners ---------- */
+toggleListBtn.onclick = async () => {
+  // Nếu dữ liệu chưa từng được tải, hãy gọi hàm để tải.
+  if (!hasDataLoaded) {
+    await fetchInitialDataAndShow();
+  } else {
+    // Nếu dữ liệu đã có sẵn, chỉ cần ẩn/hiện như bình thường.
+    isLinkListVisible = !isLinkListVisible;
+    updateLinkListVisibility();
+  }
+};
+
 document.getElementById('createBtn').onclick = createNew;
 document.getElementById('originalInput').addEventListener('keyup', (event) => {
     if (event.key === "Enter") {
@@ -634,7 +691,6 @@ document.getElementById('logoutBtn').onclick = async () => {
 };
 
 onAuthStateChanged(auth, async user => {
-
   if (loaderContainer) {
     loaderContainer.style.display = 'none';
   }
@@ -647,10 +703,21 @@ onAuthStateChanged(auth, async user => {
     document.getElementById('domainPrefix').textContent = location.origin.replace(/https?:\/\//, '') + '/';
     loginErrorEl.textContent = '';
     // Lấy tổng số link một lần để tính toán phân trang
-    const countSnapshot = await getCountFromServer(collection(db, "links"));
-    totalLinks = countSnapshot.data().count;
+//DEL    const countSnapshot = await getCountFromServer(collection(db, "links"));
+//DEL    totalLinks = countSnapshot.data().count;
     // Tải trang đầu tiên
-    loadLinks(1);
+//DEL    loadLinks(1);
+
+    // Đặt lại trạng thái khi đăng nhập
+    hasDataLoaded = false;
+    data = []; // Xóa dữ liệu cũ (nếu có từ phiên trước)
+    isLinkListVisible = false;
+    updateLinkListVisibility();
+    render(); // Render bảng rỗng
+    
+    // Đảm bảo danh sách được ẩn khi người dùng mới đăng nhập
+    isLinkListVisible = false;
+    updateLinkListVisibility();
 
   } else {
     loginContainer.style.display = 'flex';
