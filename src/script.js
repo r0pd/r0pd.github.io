@@ -38,7 +38,7 @@ const toggleListBtn = document.getElementById('toggleListBtn');
 
 /* ---------- UI helpers ---------- */
 function copyWithIcon(text, btnEl) {
-  navigator.clipboard.writeText(text).then(()=>{ const icon = btnEl.querySelector('i'); const oldClass = icon.className; icon.className = 'fa fa-check'; setTimeout(()=>{ icon.className = oldClass; }, 1200); }).catch(()=>{});
+  navigator.clipboard.writeText(text).then(() => { const icon = btnEl.querySelector('i'); const oldClass = icon.className; icon.className = 'fa fa-check'; setTimeout(() => { icon.className = oldClass; }, 1200); }).catch(() => { });
 }
 
 function updateLinkListVisibility() {
@@ -53,7 +53,7 @@ function updateLinkListVisibility() {
 
 function render() {
   document.getElementById('infoLine').textContent = `Tổng link hiện có: ${totalLinks}`;
-  
+
   const pageItems = data;
 
   const tbody = document.getElementById('tableBody');
@@ -67,19 +67,19 @@ function render() {
     const tdShort = document.createElement('td');
     const shortWrapper = document.createElement('div');
     shortWrapper.className = 'cell-content-wrapper';
-    
+
     const copyBtnShort = document.createElement('button');
     copyBtnShort.className = 'copy-btn';
     copyBtnShort.title = 'Copy full short URL';
     copyBtnShort.innerHTML = '<i class="fa fa-copy"></i>';
-    copyBtnShort.onclick = ()=> copyWithIcon(location.origin + '/' + item.short, copyBtnShort);
-    
+    copyBtnShort.onclick = () => copyWithIcon(location.origin + '/' + item.short, copyBtnShort);
+
     const shortLink = document.createElement('a');
     shortLink.href = location.origin + '/' + item.short;
     shortLink.target = '_blank';
     shortLink.className = 'link-text link-short';
     shortLink.textContent = item.short;
-    
+
     shortWrapper.appendChild(copyBtnShort);
     shortWrapper.appendChild(shortLink);
     tdShort.appendChild(shortWrapper);
@@ -102,7 +102,7 @@ function render() {
     copyBtnOrig.className = 'copy-btn';
     copyBtnOrig.title = 'Copy original URL';
     copyBtnOrig.innerHTML = '<i class="fa fa-copy"></i>';
-    copyBtnOrig.onclick = ()=> copyWithIcon(item.original, copyBtnOrig);
+    copyBtnOrig.onclick = () => copyWithIcon(item.original, copyBtnOrig);
 
     const origLink = document.createElement('a');
     origLink.href = item.original;
@@ -123,14 +123,14 @@ function render() {
     editBtn.className = 'action-btn action-edit';
     editBtn.title = 'Sửa';
     editBtn.innerHTML = '<i class="fa fa-edit"></i>';
-    editBtn.onclick = ()=> startEdit(idx, tr);
+    editBtn.onclick = () => startEdit(idx, tr);
     editBtn.style.marginRight = '8px';
 
     const delBtn = document.createElement('button');
     delBtn.className = 'action-btn action-del';
     delBtn.title = 'Xóa';
     delBtn.innerHTML = '<i class="fa fa-trash"></i>';
-    delBtn.onclick = ()=> showConfirm(idx);
+    delBtn.onclick = () => showConfirm(idx);
 
     tdAct.appendChild(editBtn);
     tdAct.appendChild(delBtn);
@@ -159,9 +159,9 @@ function render() {
   document.getElementById('dataTextarea').value = "// Dữ liệu JSON toàn bộ không còn khả dụng ở chế độ xem này.";
 }
 
-function startEdit(i, rowEl){
+function startEdit(i, rowEl) {
   const item = data[i];
-  
+
   const tdShort = document.createElement('td');
   const shortInput = document.createElement('input');
   shortInput.className = 'table-edit-input';
@@ -173,7 +173,7 @@ function startEdit(i, rowEl){
   titleInput.className = 'table-edit-input';
   titleInput.value = item.title || '';
   tdTitle.appendChild(titleInput);
-  
+
   const tdOrig = document.createElement('td');
   const origInput = document.createElement('input');
   origInput.className = 'table-edit-input';
@@ -191,16 +191,16 @@ function startEdit(i, rowEl){
   saveBtn.title = 'Lưu';
   saveBtn.innerHTML = '<i class="fa fa-check"></i>';
   saveBtn.style.marginRight = '8px';
-  saveBtn.onclick = async ()=> {
+  saveBtn.onclick = async () => {
     const ns = shortInput.value.trim();
     const no = origInput.value.trim();
     const nt = titleInput.value.trim();
-    if(!ns || !no) return;
+    if (!ns || !no) return;
     const oldShort = item.short;
-    const payload = { 
-      original: no, 
+    const payload = {
+      original: no,
       title: nt,
-      clicks: item.clicks || 0 
+      clicks: item.clicks || 0
     };
 
     try {
@@ -229,7 +229,7 @@ function startEdit(i, rowEl){
   cancelBtn.className = 'action-btn action-del';
   cancelBtn.title = 'Hủy';
   cancelBtn.innerHTML = '<i class="fa fa-times"></i>';
-  cancelBtn.onclick = ()=> render();
+  cancelBtn.onclick = () => render();
 
   tdAct.appendChild(saveBtn);
   tdAct.appendChild(cancelBtn);
@@ -243,16 +243,16 @@ function startEdit(i, rowEl){
   shortInput.focus();
 }
 
-async function createNew(){
+async function createNew() {
   if (!currentUser) return alert("Vui lòng đăng nhập admin để tạo link.");
 
   const orig = document.getElementById('originalInput').value.trim();
   const customAlias = document.getElementById('customAliasInput').value.trim();
   const title = document.getElementById('titleInput').value.trim();
-  
+
   if (!orig) {
-      alert("Vui lòng nhập link gốc.");
-      return;
+    alert("Vui lòng nhập link gốc.");
+    return;
   }
 
   const createBtn = document.getElementById('createBtn');
@@ -262,9 +262,9 @@ async function createNew(){
 
   if (code) {
     if (!/^[a-zA-Z0-9_-]+$/.test(code)) {
-        alert("Mã tùy chỉnh chỉ được chứa chữ cái (a-z, A-Z), số (0-9), dấu gạch ngang (-) và gạch dưới (_).");
-        createBtn.disabled = false;
-        return;
+      alert("Mã tùy chỉnh chỉ được chứa chữ cái (a-z, A-Z), số (0-9), dấu gạch ngang (-) và gạch dưới (_).");
+      createBtn.disabled = false;
+      return;
     }
     const snap = await getDoc(doc(db, "links", code));
     if (snap.exists()) {
@@ -272,64 +272,64 @@ async function createNew(){
       createBtn.disabled = false;
       return;
     }
-  } 
+  }
   else {
     let codeFound = false;
     for (let length = 3; length <= 8; length++) {
-        let tries = 0;
-        const maxTriesPerLength = 15; 
-        do {
-            code = genCode(length);
-            const snap = await getDoc(doc(db, "links", code));
-            if (!snap.exists()) {
-                codeFound = true;
-                break;
-            }
-            tries++;
-        } while (tries < maxTriesPerLength);
-
-        if (codeFound) {
-            break;
+      let tries = 0;
+      const maxTriesPerLength = 15;
+      do {
+        code = genCode(length);
+        const snap = await getDoc(doc(db, "links", code));
+        if (!snap.exists()) {
+          codeFound = true;
+          break;
         }
+        tries++;
+      } while (tries < maxTriesPerLength);
+
+      if (codeFound) {
+        break;
+      }
     }
 
     if (!codeFound) {
-        alert("Không thể tạo mã ngẫu nhiên duy nhất sau khi đã thử độ dài từ 3 đến 8. Vui lòng thử lại.");
-        createBtn.disabled = false;
-        return;
+      alert("Không thể tạo mã ngẫu nhiên duy nhất sau khi đã thử độ dài từ 3 đến 8. Vui lòng thử lại.");
+      createBtn.disabled = false;
+      return;
     }
   }
   try {
     const payload = { original: orig, clicks: 0 };
     if (title) {
-        payload.title = title;
+      payload.title = title;
     }
     await setDoc(doc(db, "links", code), payload);
-    
+
     const newUrl = `${location.origin}/${code}`;
     navigator.clipboard.writeText(newUrl).then(() => {
-        const btnText = createBtn.querySelector('.btn-text');
-        const originalText = btnText.textContent;
-        const originalIcon = createBtn.querySelector('.btn-icon').outerHTML;
+      const btnText = createBtn.querySelector('.btn-text');
+      const originalText = btnText.textContent;
+      const originalIcon = createBtn.querySelector('.btn-icon').outerHTML;
 
-        btnText.textContent = 'Đã sao chép!';
-        createBtn.querySelector('.btn-icon').outerHTML = '<i class="fa fa-check"></i>';
-        
-        setTimeout(() => {
-          btnText.textContent = originalText;
-          createBtn.querySelector('i').outerHTML = originalIcon;
-          createBtn.disabled = false;
-        }, 900);
-    }).catch(err => {
-        console.error('Failed to copy link: ', err);
+      btnText.textContent = 'Đã sao chép!';
+      createBtn.querySelector('.btn-icon').outerHTML = '<i class="fa fa-check"></i>';
+
+      setTimeout(() => {
+        btnText.textContent = originalText;
+        createBtn.querySelector('i').outerHTML = originalIcon;
         createBtn.disabled = false;
+      }, 900);
+    }).catch(err => {
+      console.error('Failed to copy link: ', err);
+      createBtn.disabled = false;
     });
-    
-    data.unshift({ short: code, original: orig, title: title, clicks: 0 }); 
+
+    data.unshift({ short: code, original: orig, title: title, clicks: 0 });
     document.getElementById('originalInput').value = '';
     document.getElementById('customAliasInput').value = '';
     document.getElementById('titleInput').value = '';
-    page = 1; 
+    page = 1;
     render();
     if (!isLinkListVisible) {
       isLinkListVisible = true;
@@ -363,15 +363,15 @@ async function fetchInitialDataAndShow() {
   }
 }
 
-function genCode(length = 8){
+function genCode(length = 8) {
   const chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
   let out = "";
-  for(let i=0; i<length; i++) { out += chars.charAt(Math.floor(Math.random() * chars.length)); }
+  for (let i = 0; i < length; i++) { out += chars.charAt(Math.floor(Math.random() * chars.length)); }
   return out;
 }
 
 /* ---------- Export ---------- */
-async function exportFile(){
+async function exportFile() {
   const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5MB
   if (!data.length) {
     alert('Không có dữ liệu để xuất');
@@ -418,49 +418,49 @@ async function exportFile(){
   alert('Hoàn thành.');
 }
 
-function importSelectedFiles(files){
-  if(!files || !files.length) return;
-  importedFileNames = importedFileNames.concat(Array.from(files).map(f=>f.name));
+function importSelectedFiles(files) {
+  if (!files || !files.length) return;
+  importedFileNames = importedFileNames.concat(Array.from(files).map(f => f.name));
   const readers = [];
-  for(const f of files){
-    readers.push(new Promise((res)=>{
+  for (const f of files) {
+    readers.push(new Promise((res) => {
       const r = new FileReader();
-      r.onload = async (ev)=>{
-        try{
+      r.onload = async (ev) => {
+        try {
           const arr = JSON.parse(ev.target.result);
-          if(Array.isArray(arr)){
+          if (Array.isArray(arr)) {
             const batch = writeBatch(db);
-            arr.forEach(it=>{
-              if(!it || !it.short) return;
+            arr.forEach(it => {
+              if (!it || !it.short) return;
               const id = String(it.short);
               const payload = {
-                  original: String(it.original),
-                  clicks: Number(it.clicks) || 0
+                original: String(it.original),
+                clicks: Number(it.clicks) || 0
               };
               if (it.title) {
-                  payload.title = String(it.title);
+                payload.title = String(it.title);
               }
               batch.set(doc(db, "links", id), payload);
             });
             await batch.commit();
           }
-        }catch(e){}
+        } catch (e) { }
         res();
       };
       r.readAsText(f);
     }));
   }
-  Promise.all(readers).then(()=>{ page=1; loadLinks(); document.getElementById('fileName').textContent = `Đã nhập ${files.length} file`; document.getElementById('importedFilesList').textContent = 'Các file đã nhập: ' + importedFileNames.join(', '); });
+  Promise.all(readers).then(() => { page = 1; loadLinks(); document.getElementById('fileName').textContent = `Đã nhập ${files.length} file`; document.getElementById('importedFilesList').textContent = 'Các file đã nhập: ' + importedFileNames.join(', '); });
 }
 
-document.getElementById('saveDataBtn').onclick = async function(){
+document.getElementById('saveDataBtn').onclick = async function () {
   if (!currentUser) return alert("Vui lòng đăng nhập admin trước khi lưu dữ liệu!");
-  try{
+  try {
     const arr = JSON.parse(document.getElementById('dataTextarea').value);
-    if(!Array.isArray(arr)) return alert('Dữ liệu không hợp lệ');
+    if (!Array.isArray(arr)) return alert('Dữ liệu không hợp lệ');
 
     const newMap = new Map();
-    arr.forEach(it => { if(it && it.short) newMap.set(String(it.short), { original: String(it.original||""), title: String(it.title||""), clicks: Number(it.clicks) || 0 }); });
+    arr.forEach(it => { if (it && it.short) newMap.set(String(it.short), { original: String(it.original || ""), title: String(it.title || ""), clicks: Number(it.clicks) || 0 }); });
 
     const snap = await getDocs(collection(db, "links"));
     const existingIds = new Set();
@@ -468,12 +468,12 @@ document.getElementById('saveDataBtn').onclick = async function(){
 
     const batch = writeBatch(db);
     for (const [short, value] of newMap.entries()) {
-      const payload = { 
+      const payload = {
         original: value.original,
-        clicks: value.clicks 
+        clicks: value.clicks
       };
       if (value.title) {
-          payload.title = value.title;
+        payload.title = value.title;
       }
       batch.set(doc(db, "links", short), payload);
       existingIds.delete(short);
@@ -486,7 +486,7 @@ document.getElementById('saveDataBtn').onclick = async function(){
     await loadLinks();
     hideDataPopup();
     alert("Lưu dữ liệu vào Firestore thành công.");
-  } catch(e){
+  } catch (e) {
     alert("Lỗi khi lưu dữ liệu: " + e.message);
   }
 };
@@ -496,32 +496,32 @@ function showConfirm(index) {
   pendingDeleteIndex = index;
   const popup = document.getElementById('confirmPopup');
   popup.style.display = 'flex';
-  requestAnimationFrame(()=>{popup.classList.add('show');document.getElementById('confirmYes').focus();});
+  requestAnimationFrame(() => { popup.classList.add('show'); document.getElementById('confirmYes').focus(); });
 }
-function hideConfirm(){
-  const popup=document.getElementById('confirmPopup');
+function hideConfirm() {
+  const popup = document.getElementById('confirmPopup');
   popup.classList.remove('show');
-  setTimeout(()=>popup.style.display='none',250);
-  pendingDeleteIndex=null;
+  setTimeout(() => popup.style.display = 'none', 250);
+  pendingDeleteIndex = null;
 }
-document.getElementById('confirmYes').onclick = async ()=> {
-  if(pendingDeleteIndex !== null){
+document.getElementById('confirmYes').onclick = async () => {
+  if (pendingDeleteIndex !== null) {
     const item = data[pendingDeleteIndex];
     try {
       await deleteDoc(doc(db, "links", item.short));
-      data.splice(pendingDeleteIndex,1);
+      data.splice(pendingDeleteIndex, 1);
       render();
-    } catch(e){ alert("Lỗi xóa: " + e.message); }
+    } catch (e) { alert("Lỗi xóa: " + e.message); }
   }
   hideConfirm();
 };
 document.getElementById('confirmNo').onclick = hideConfirm;
 
 /* ---------- Popup show/hide and copy ---------- */
-function showDataPopup(){ const popup=document.getElementById('dataPopup'); popup.style.display='flex'; requestAnimationFrame(()=>popup.classList.add('show')); }
-function hideDataPopup(){ const popup=document.getElementById('dataPopup'); popup.classList.remove('show'); setTimeout(()=>popup.style.display='none',250); }
+function showDataPopup() { const popup = document.getElementById('dataPopup'); popup.style.display = 'flex'; requestAnimationFrame(() => popup.classList.add('show')); }
+function hideDataPopup() { const popup = document.getElementById('dataPopup'); popup.classList.remove('show'); setTimeout(() => popup.style.display = 'none', 250); }
 
-document.getElementById('copyDataBtn').onclick = function(){ copyWithIcon(document.getElementById('dataTextarea').value, this); };
+document.getElementById('copyDataBtn').onclick = function () { copyWithIcon(document.getElementById('dataTextarea').value, this); };
 document.getElementById('showDataBtn').onclick = showDataPopup;
 document.getElementById('closeDataPopup').onclick = hideDataPopup;
 
@@ -536,21 +536,21 @@ toggleListBtn.onclick = async () => {
 };
 document.getElementById('createBtn').onclick = createNew;
 document.getElementById('originalInput').addEventListener('keyup', (event) => {
-    if (event.key === "Enter") {
-        event.preventDefault();
-    }
+  if (event.key === "Enter") {
+    event.preventDefault();
+  }
 });
 document.getElementById('searchInput').oninput = () => {
   loadLinks(1, document.getElementById('searchInput').value);
 };
 document.getElementById('exportBtn').onclick = exportFile;
-document.getElementById('importFiles').onchange = e=>{ importSelectedFiles(e.target.files); };
+document.getElementById('importFiles').onchange = e => { importSelectedFiles(e.target.files); };
 
 const handleLoginOnEnter = (event) => {
-    if (event.key === "Enter") {
-        event.preventDefault();
-        document.getElementById('loginBtn').click();
-    }
+  if (event.key === "Enter") {
+    event.preventDefault();
+    document.getElementById('loginBtn').click();
+  }
 };
 document.getElementById('adminEmail').addEventListener('keyup', handleLoginOnEnter);
 document.getElementById('adminPass').addEventListener('keyup', handleLoginOnEnter);
@@ -596,14 +596,14 @@ async function loadLinks(targetPage = 1, searchQuery = '') {
     // Logic phân trang với startAfter
     if (targetPage > 1 && pageCursors[targetPage]) {
       if (searchQuery) {
-          linksQuery = query(linksCollection, orderBy(documentId()), where(documentId(), '>=', searchQuery), where(documentId(), '<=', searchQuery + '\uf8ff'), startAfter(pageCursors[targetPage]), limit(PER_PAGE));
+        linksQuery = query(linksCollection, orderBy(documentId()), where(documentId(), '>=', searchQuery), where(documentId(), '<=', searchQuery + '\uf8ff'), startAfter(pageCursors[targetPage]), limit(PER_PAGE));
       } else {
-          linksQuery = query(linksCollection, orderBy(documentId()), startAfter(pageCursors[targetPage]), limit(PER_PAGE));
+        linksQuery = query(linksCollection, orderBy(documentId()), startAfter(pageCursors[targetPage]), limit(PER_PAGE));
       }
     }
 
     const documentSnapshots = await getDocs(linksQuery);
-    data = []; 
+    data = [];
     documentSnapshots.forEach(docSnap => {
       const obj = docSnap.data();
       data.push({
@@ -619,8 +619,8 @@ async function loadLinks(targetPage = 1, searchQuery = '') {
       pageCursors[targetPage + 1] = lastVisible;
     }
 
-    if(searchQuery && targetPage === 1){
-        pageCursors = { 1: null };
+    if (searchQuery && targetPage === 1) {
+      pageCursors = { 1: null };
     }
 
     page = targetPage;
@@ -643,25 +643,25 @@ document.getElementById('loginBtn').onclick = async () => {
   }
   try {
     await signInWithEmailAndPassword(auth, email, pass);
-  } catch(err) {
+  } catch (err) {
     let friendlyMessage = "Đăng nhập thất bại. Vui lòng thử lại.";
-    
+
     switch (err.code) {
-        case 'auth/invalid-credential':
-        case 'auth/user-not-found':
-        case 'auth/wrong-password':
-            friendlyMessage = "Sai email hoặc mật khẩu. Vui lòng kiểm tra lại.";
-            break;
-        case 'auth/invalid-email':
-            friendlyMessage = "Địa chỉ email không hợp lệ.";
-            break;
-        case 'auth/too-many-requests':
-            friendlyMessage = "Bạn đã thử đăng nhập quá nhiều lần. Vui lòng thử lại sau.";
-            break;
+      case 'auth/invalid-credential':
+      case 'auth/user-not-found':
+      case 'auth/wrong-password':
+        friendlyMessage = "Sai email hoặc mật khẩu. Vui lòng kiểm tra lại.";
+        break;
+      case 'auth/invalid-email':
+        friendlyMessage = "Địa chỉ email không hợp lệ.";
+        break;
+      case 'auth/too-many-requests':
+        friendlyMessage = "Bạn đã thử đăng nhập quá nhiều lần. Vui lòng thử lại sau.";
+        break;
     }
-    
+
     loginErrorEl.textContent = friendlyMessage;
-}
+  }
 };
 
 document.getElementById('logoutBtn').onclick = async () => {

@@ -1,13 +1,15 @@
 <!doctype html>
 <html lang="vi">
+
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Link Rút Gọn</title>
-<link rel="icon" type="image/png" href="./img/logo.png" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<link rel="stylesheet" href="/src/styles.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Link Rút Gọn</title>
+  <link rel="icon" type="image/png" href="img/logo.png" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="src/styles.css">
 </head>
+
 <body>
 
   <div id="loader-container">
@@ -16,11 +18,11 @@
 
   <div id="login-container" style="display:none;">
     <div class="login-box">
-        <h1><i class="fa fa-lock" style="color:var(--accent-2)"></i>&nbsp; Admin</h1>
-        <input id="adminEmail" class="input" placeholder="Email" />
-        <input id="adminPass" class="input" type="password" placeholder="Mật khẩu" />
-        <button type="submit" class="btn" id="loginBtn">Đăng nhập</button>
-        <p id="loginError"></p>
+      <h1><i class="fa fa-lock" style="color:var(--accent-2)"></i>&nbsp; Admin</h1>
+      <input id="adminEmail" class="input" placeholder="Email" />
+      <input id="adminPass" class="input" type="password" placeholder="Mật khẩu" />
+      <button type="submit" class="btn" id="loginBtn">Đăng nhập</button>
+      <p id="loginError"></p>
     </div>
   </div>
 
@@ -28,7 +30,9 @@
     <div class="wrap">
       <header>
         <div class="logo"><i class="fa fa-link" style="color:#fff"></i></div>
-        <div><h1>Link Rút Gọn</h1></div>
+        <div>
+          <h1>Link Rút Gọn</h1>
+        </div>
       </header>
 
       <div class="auth-bar">
@@ -48,26 +52,26 @@
 
       <div class="create-container">
         <div class="create-form">
-            <div class="input-group">
-                <div class="input-row">
-                    <i class="fa fa-link form-icon"></i>
-                    <input id="originalInput" class="input" placeholder="Dán link gốc của bạn vào đây..."/>
-                </div>
-                <div class="dual-input-row">
-                    <div class="input-row">
-                        <i class="fa fa-pencil-alt form-icon" style="color: var(--muted);"></i>
-                        <span id="domainPrefix" class="domain-prefix"></span>
-                        <input id="customAliasInput" class="input" placeholder="...mã tùy chỉnh"/>
-                    </div>
-                    <div class="input-row">
-                        <i class="fa fa-tag form-icon" style="color: var(--muted);"></i>
-                        <input id="titleInput" class="input" placeholder="...thêm tiêu đề"/>
-                    </div>
-                </div>
+          <div class="input-group">
+            <div class="input-row">
+              <i class="fa fa-link form-icon"></i>
+              <input id="originalInput" class="input" placeholder="Dán link gốc của bạn vào đây..." />
             </div>
-            <button id="createBtn" class="btn">
-                <span class="btn-text">Tạo Link</span>&nbsp;<i class="fa fa-magic btn-icon"></i>
-            </button>
+            <div class="dual-input-row">
+              <div class="input-row">
+                <i class="fa fa-pencil-alt form-icon" style="color: var(--muted);"></i>
+                <span id="domainPrefix" class="domain-prefix"></span>
+                <input id="customAliasInput" class="input" placeholder="...mã tùy chỉnh" />
+              </div>
+              <div class="input-row">
+                <i class="fa fa-tag form-icon" style="color: var(--muted);"></i>
+                <input id="titleInput" class="input" placeholder="...thêm tiêu đề" />
+              </div>
+            </div>
+          </div>
+          <button id="createBtn" class="btn">
+            <span class="btn-text">Tạo Link</span>&nbsp;<i class="fa fa-magic btn-icon"></i>
+          </button>
         </div>
       </div>
 
@@ -96,7 +100,7 @@
 
         <div class="pagination" id="pagination"></div>
       </div>
-      
+
       <div id="importedFilesList"></div>
       <div id="deleteCandidates"></div>
     </div>
@@ -131,6 +135,7 @@
     </div>
   </div>
 
-  <script type="module" src="/src/script.js"></script>
+  <script type="module" src="src/script.js"></script>
 </body>
+
 </html>

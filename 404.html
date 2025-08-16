@@ -1,83 +1,82 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-<meta charset="utf-8">
-<title>Redirect...</title>
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<style>
-  :root {
-    --bg: #0f1720;
-    --accent-2: #66b3ff;
-  }
-  body {
-    background-color: var(--bg);
-    color: var(--accent-2);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
-    font-family: Inter, Arial, Helvetica, sans-serif;
-  }
-  h1 {
-    font-size: 22px;
-  }
-</style>
+  <meta charset="utf-8">
+  <title>Redirect...</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root {
+      --bg: #0f1720;
+      --accent-2: #66b3ff;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--accent-2);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      font-family: Inter, Arial, Helvetica, sans-serif;
+    }
+
+    h1 {
+      font-size: 22px;
+    }
+  </style>
 </head>
+
 <body>
-<h1>Đang chuyển hướng...</h1>
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-// Thêm updateDoc và increment vào đây
-import { getFirestore, doc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+  <h1>Đang chuyển hướng...</h1>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+    import { getFirestore, doc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAIGu_5QNMvzrObPNxHdG9kybBQtAddGsw",
-  authDomain: "linkrutgon-a69c8.firebaseapp.com",
-  projectId: "linkrutgon-a69c8",
-  storageBucket: "linkrutgon-a69c8.firebasestorage.app",
-  messagingSenderId: "373927357726",
-  appId: "1:373927357726:web:2a155c5ca9ee7066a62d0f",
-  measurementId: "G-CFQC07GBVE"
-};
+    const firebaseConfig = {
+      apiKey: "AIzaSyAIGu_5QNMvzrObPNxHdG9kybBQtAddGsw",
+      authDomain: "linkrutgon-a69c8.firebaseapp.com",
+      projectId: "linkrutgon-a69c8",
+      storageBucket: "linkrutgon-a69c8.firebasestorage.app",
+      messagingSenderId: "373927357726",
+      appId: "1:373927357726:web:2a155c5ca9ee7066a62d0f",
+      measurementId: "G-CFQC07GBVE"
+    };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-const code = window.location.pathname.substring(1);
+    const code = window.location.pathname.substring(1);
 
-async function findAndRedirect() {
-  try {
-    if (!code) {
-      document.body.innerHTML = "<h1>404 - Link not found</h1>";
-      return;
+    async function findAndRedirect() {
+      try {
+        if (!code) {
+          document.body.innerHTML = "<h1>404 - Link not found</h1>";
+          return;
+        }
+        const docRef = doc(db, "links", code);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const original = docSnap.data().original || "/";
+
+          window.location.href = original;
+          updateDoc(docRef, {
+            clicks: increment(1)
+          });
+
+        } else {
+          document.body.innerHTML = "<h1>404 - Link not found</h1>";
+        }
+      } catch (err) {
+        console.error(err);
+        document.body.innerHTML = "<h1>404 - Lỗi kết nối Firebase</h1>";
+      }
     }
-    const docRef = doc(db, "links", code);
-    const docSnap = await getDoc(docRef);
 
-    if (docSnap.exists()) {
-      // Lấy link gốc để chuẩn bị chuyển hướng
-      const original = docSnap.data().original || "/";
-      
-      // Chuyển hướng người dùng ngay lập tức
-      window.location.href = original;
-      
-      // Cập nhật số lượt nhấp một cách bất đồng bộ ở chế độ "fire-and-forget"
-      // Thao tác này sẽ chạy ở background mà không làm chậm việc chuyển hướng
-      updateDoc(docRef, {
-          clicks: increment(1)
-      });
-
-    } else {
-      document.body.innerHTML = "<h1>404 - Link not found</h1>";
-    }
-  } catch (err) {
-    console.error(err);
-    document.body.innerHTML = "<h1>404 - Lỗi kết nối Firebase</h1>";
-  }
-}
-
-findAndRedirect();
-</script>
+    findAndRedirect();
+  </script>
 </body>
+
 </html>
