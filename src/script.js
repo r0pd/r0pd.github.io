@@ -1,16 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, writeBatch, query, orderBy, limit, startAfter, getCountFromServer, documentId, where } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyAIGu_5QNMvzrObPNxHdG9kybBQtAddGsw",
-  authDomain: "linkrutgon-a69c8.firebaseapp.com",
-  projectId: "linkrutgon-a69c8",
-  storageBucket: "linkrutgon-a69c8.firebasestorage.app",
-  messagingSenderId: "373927357726",
-  appId: "1:373927357726:web:2a155c5ca9ee7066a62d0f",
-  measurementId: "G-CFQC07GBVE"
-};
+import { firebaseConfig } from './firebase-config.js';
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
